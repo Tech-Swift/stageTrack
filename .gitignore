@@ -1,0 +1,60 @@
+# =========================
+# ENVIRONMENT VARIABLES
+# =========================
+.env
+.env.local
+.env.production
+.env.development
+
+# =========================
+# NODE MODULES
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# BUILD OUTPUTS
+# =========================
+dist/
+build/
+.vite/
+
+# =========================
+# DATABASE FILES (SAFETY)
+# =========================
+*.sqlite
+*.db
+*.sql
+
+# =========================
+# LOG FILES
+# =========================
+logs/
+*.log
+
+# =========================
+# OS SYSTEM FILES
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE & EDITOR SETTINGS
+# =========================
+.vscode/
+.idea/
+*.swp
+
+# =========================
+# COVERAGE & TEMP FILES
+# =========================
+coverage/
+.tmp/
+.cache/
+
+# =========================
+# UPLOADS (USER FILES)
+# =========================
+uploads/
