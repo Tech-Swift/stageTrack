@@ -10,7 +10,7 @@ app.use(express.json());
 
 
 //mount auth routes
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
 const startServer = async () => {
   await connectDB();

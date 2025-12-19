@@ -1,25 +1,30 @@
-import bcrypt from "bcrypt";
-import User from "../models/User.js";
-import { signToken } from "../utils/jwt.js";
+ import bcrypt from "bcrypt";
 import { Op } from "sequelize";
+import User from "../models/User.js";
+import { signToken } from "../utils/jwt.js"; // your JWT helper
 
-
-export async function registerUser({ full_name, email, phone, password }) {
-  // Validate required fields
+/**
+ * Register a new user
+ */
+export async function registerUser({
+  full_name,
+  email,
+  phone,
+  password,
+  role = "user",
+  sacco_id,
+  stage_id
+}) {
+  // Check required fields
   if (!full_name || !email || !phone || !password) {
-    throw new Error("All fields are required");
+    throw new Error("Full name, email, phone, and password are required");
   }
 
-  // Check for existing email or phone
-  const existingUser = await User.findOne({
-    where: {
-      [Op.or]: [{ email }, { phone }]
-    }
+  // Check duplicates
+  const existing = await User.findOne({
+    where: { [Op.or]: [{ email }, { phone }] }
   });
-
-  if (existingUser) {
-    throw new Error("Email or phone already in use");
-  }
+  if (existing) throw new Error("Email or phone already in use");
 
   // Hash password
   const password_hash = await bcrypt.hash(password, 10);
@@ -30,52 +35,62 @@ export async function registerUser({ full_name, email, phone, password }) {
     email,
     phone,
     password_hash,
+    role,
+    sacco_id,
+    stage_id,
     status: "active"
   });
 
   // Generate JWT
-  const token = signToken(user);
-
-  return {
-    token,
-    user: {
-      id: user.id,
-      full_name: user.full_name,
-      email: user.email,
-      phone: user.phone
-    }
-  };
-}
-
-export async function loginUser(identifier, password) {
-  const user = await User.findOne({
-    where: {
-      status: "active",
-      ...(identifier.includes("@")
-        ? { email: identifier }
-        : { phone: identifier })
-    }
+  const token = signToken({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    sacco_id: user.sacco_id,
+    stage_id: user.stage_id
   });
 
-  if (!user) {
-    throw new Error("Invalid credentials");
-  }
+  return { user, token };
+}
 
-  const passwordValid = await bcrypt.compare(password, user.password_hash);
+/**
+ * Login user
+ */
+export async function loginUser(identifier, password) {
+  // identifier = email or phone
+  const user = await User.findOne({
+    where: { [Op.or]: [{ email: identifier }, { phone: identifier }] },
+    include: ["sacco", "stage"]
+  });
+  if (!user) throw new Error("Invalid credentials");
 
-  if (!passwordValid) {
-    throw new Error("Invalid credentials");
-  }
+  // Check password
+  const match = await bcrypt.compare(password, user.password_hash);
+  if (!match) throw new Error("Invalid credentials");
 
-  const token = signToken(user);
+  // Generate JWT
+  const token = signToken({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    sacco_id: user.sacco_id,
+    stage_id: user.stage_id
+  });
 
-  return {
-    token,
-    user: {
-      id: user.id,
-      full_name: user.full_name,
-      email: user.email,
-      phone: user.phone
-    }
-  };
+  return { user, token };
+}
+
+/**
+ * Get all users (optionally filter by SACCO)
+ */
+export async function getUsers(saccoId = null) {
+  const where = saccoId ? { sacco_id: saccoId } : {};
+  return User.findAll({ where, include: ["sacco", "stage"] });
+}
+
+/**
+ * Get single user by ID
+ */
+export async function getUserById(userId) {
+  return User.findByPk(userId, { include: ["sacco", "stage"] });
 }
