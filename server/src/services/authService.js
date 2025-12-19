@@ -1,6 +1,7 @@
- import bcrypt from "bcrypt";
+import bcrypt from "bcrypt";
 import { Op } from "sequelize";
-import User from "../models/User.js";
+import User from "../models/User/User.js";
+import Role from "../models/User/Role.js";
 import { signToken } from "../utils/jwt.js"; // your JWT helper
 
 /**
@@ -57,18 +58,19 @@ export async function registerUser({
  * Login user
  */
 export async function loginUser(identifier, password) {
-  // identifier = email or phone
   const user = await User.findOne({
     where: { [Op.or]: [{ email: identifier }, { phone: identifier }] },
-    include: ["sacco", "stage"]
+    include: [
+      { model: Role, as: "roles", through: { attributes: [] }, attributes: ["id", "name", "hierarchy_level"] },
+      "sacco",
+      "stage"
+    ]
   });
   if (!user) throw new Error("Invalid credentials");
 
-  // Check password
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) throw new Error("Invalid credentials");
 
-  // Generate JWT
   const token = signToken({
     id: user.id,
     email: user.email,
@@ -80,17 +82,49 @@ export async function loginUser(identifier, password) {
   return { user, token };
 }
 
+
+export async function assignRolesToUser(userId, roleIds, assignedBy) {
+  const user = await User.findByPk(userId);
+  if (!user) throw new Error("User not found");
+
+  // Fetch roles
+  const roles = await Role.findAll({
+    where: { id: roleIds }
+  });
+  if (roles.length === 0) throw new Error("No valid roles found");
+
+  // Assign roles (this will replace existing roles)
+  await user.setRoles(roles, { through: { assigned_by_uuid: assignedBy, assigned_at: new Date() } });
+
+  return { message: "Roles updated successfully" };
+}
+
 /**
  * Get all users (optionally filter by SACCO)
  */
 export async function getUsers(saccoId = null) {
   const where = saccoId ? { sacco_id: saccoId } : {};
-  return User.findAll({ where, include: ["sacco", "stage"] });
+  return User.findAll({
+    where,
+    include: [
+      { model: Role, as: "roles", through: { attributes: [] }, attributes: ["id", "name", "hierarchy_level"] },
+      "sacco",
+      "stage"
+    ]
+  });
 }
+
 
 /**
  * Get single user by ID
  */
-export async function getUserById(userId) {
-  return User.findByPk(userId, { include: ["sacco", "stage"] });
+ export async function getUserById(userId) {
+  return User.findByPk(userId, {
+    include: [
+      { model: Role, as: "roles", through: { attributes: [] }, attributes: ["id", "name", "hierarchy_level"] },
+      "sacco",
+      "stage"
+    ]
+  });
 }
+

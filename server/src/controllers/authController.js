@@ -1,6 +1,7 @@
 import {
   registerUser,
   loginUser,
+  assignRolesToUser,
   getUsers,
   getUserById
 } from "../services/authService.js";
@@ -21,6 +22,19 @@ export async function login(req, res) {
     res.json(result);
   } catch (err) {
     res.status(401).json({ message: err.message });
+  }
+}
+
+export async function updateUserRoles(req, res) {
+  try {
+    const userId = req.params.id;
+    const { roles } = req.body; // array of role IDs
+    const assignedBy = req.user.id; // super admin performing the update
+
+    const result = await assignRolesToUser(userId, roles, assignedBy);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 }
 

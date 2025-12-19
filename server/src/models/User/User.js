@@ -1,7 +1,9 @@
 import { DataTypes } from "sequelize";
-import { sequelize } from "../config/db.js";
-import SACCO from "./sacco.model.js";
-import Stage from "./stage.model.js";
+import { sequelize } from "../../config/db.js";
+import UserRoles from "./user_role.js";
+import Role from "./Role.js";
+import SACCO from "../sacco.model.js";
+import Stage from "../stage.model.js";
 
 const User = sequelize.define(
   "User",
@@ -14,7 +16,6 @@ const User = sequelize.define(
     badge_number: { type: DataTypes.STRING(100), unique: true },
     license_number: { type: DataTypes.STRING(100), unique: true },
     status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: "active" },
-    role: { type: DataTypes.STRING(50), allowNull: false, defaultValue: "user" },
     sacco_id: {
       type: DataTypes.UUID,
       allowNull: true, // SACCO required for operational users
@@ -47,5 +48,12 @@ User.belongsTo(Stage, { foreignKey: "stage_id", as: "stage" });
 
 SACCO.hasMany(User, { foreignKey: "sacco_id", as: "users" });
 Stage.hasMany(User, { foreignKey: "stage_id", as: "users" });
+
+User.belongsToMany(Role, { through: UserRoles, foreignKey: "user_uuid", otherKey: "role_id", as: "roles" });
+Role.belongsToMany(User, { through: UserRoles, foreignKey: "role_id", otherKey: "user_uuid", as: "users" });
+
+UserRoles.belongsTo(User, { foreignKey: "user_uuid", as: "user" });
+UserRoles.belongsTo(Role, { foreignKey: "role_id", as: "role" });
+UserRoles.belongsTo(User, { foreignKey: "assigned_by_uuid", as: "assignedBy" });
 
 export default User;
