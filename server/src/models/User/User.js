@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../../config/db.js";
-import UserRoles from "./user_role.js";
+import UserRole from "./user_role.js";
 import Role from "./Role.js";
-import SACCO from "../sacco.model.js";
+import SACCO from "../Sacco/sacco.model.js";
 import Stage from "../stage.model.js";
 
 const User = sequelize.define(
@@ -49,11 +49,11 @@ User.belongsTo(Stage, { foreignKey: "stage_id", as: "stage" });
 SACCO.hasMany(User, { foreignKey: "sacco_id", as: "users" });
 Stage.hasMany(User, { foreignKey: "stage_id", as: "users" });
 
-User.belongsToMany(Role, { through: UserRoles, foreignKey: "user_uuid", otherKey: "role_id", as: "roles" });
-Role.belongsToMany(User, { through: UserRoles, foreignKey: "role_id", otherKey: "user_uuid", as: "users" });
+User.belongsToMany(Role, { through: UserRole, foreignKey: "user_uuid", otherKey: "role_id", as: "roles" });
+Role.belongsToMany(User, { through: UserRole, foreignKey: "role_id", otherKey: "user_uuid", as: "users" });
 
-UserRoles.belongsTo(User, { foreignKey: "user_uuid", as: "user" });
-UserRoles.belongsTo(Role, { foreignKey: "role_id", as: "role" });
-UserRoles.belongsTo(User, { foreignKey: "assigned_by_uuid", as: "assignedBy" });
+UserRole.belongsTo(User, { foreignKey: "user_uuid", as: "user" });
+UserRole.belongsTo(Role, { foreignKey: "role_id", as: "role" });
+UserRole.belongsTo(User, { foreignKey: "assigned_by_uuid", as: "assignedBy" });
 
 export default User;
