@@ -1,6 +1,3 @@
-import UserRole from "../models/User/user_role.js"; // correct file name
-import Role from "../models/User/Role.js";
-
 const ROLE_ORDER = [
   "conductor",
   "driver",
@@ -9,47 +6,59 @@ const ROLE_ORDER = [
   "manager",
   "director",
   "admin",
-  "super_admin"
+  "super_admin",
 ];
 
-function highestRole(roles) {
-  return roles.sort(
-    (a, b) => ROLE_ORDER.indexOf(b) - ROLE_ORDER.indexOf(a)
-  )[0];
+/**
+ * Returns the highest role from an array of roles
+ */
+function highestRole(roles = []) {
+  const valid = roles.filter((r) => ROLE_ORDER.includes(r));
+  if (valid.length === 0) return null;
+
+  return valid.reduce((best, curr) =>
+    ROLE_ORDER.indexOf(curr) > ROLE_ORDER.indexOf(best) ? curr : best
+  );
 }
 
+/**
+ * Middleware: requireRole
+ * @param {string} minRole - minimum role required (e.g., "admin")
+ */
 export function requireRole(minRole) {
-  return async (req, res, next) => {
+  return (req, res, next) => {
     try {
-      const userId = req.user.id;
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthenticated" });
+      }
 
-      const assignments = await UserRole.findAll({
-        where: { user_uuid: userId },
-        include: [
-          {
-            model: Role,
-            as: "role", // must match the alias in user_roles.js
-            attributes: ["id", "name", "hierarchy_level"]
-          }
-        ]
-      });
+      // Use roles array from authenticate middleware
+      const roles = Array.isArray(req.user.roles) ? req.user.roles : [];
 
-      if (!assignments.length) {
+      // Compute highest role
+      const top = highestRole(roles);
+
+      if (!top) {
         return res.status(403).json({ message: "No roles assigned" });
       }
 
-      const roleNames = assignments.map(r => r.role.name); // lowercase 'role'
-      const userHighest = highestRole(roleNames);
+      // Validate minRole exists
+      if (!ROLE_ORDER.includes(minRole)) {
+        return res.status(500).json({ message: `Server misconfig: unknown minRole '${minRole}'` });
+      }
 
-      if (ROLE_ORDER.indexOf(userHighest) < ROLE_ORDER.indexOf(minRole)) {
+      // Hierarchy check: deny if user's highest role < minRole
+      if (ROLE_ORDER.indexOf(top) < ROLE_ORDER.indexOf(minRole)) {
         return res.status(403).json({ message: "Insufficient role privileges" });
       }
 
-      req.user.highestRole = userHighest;
+      // Expose for downstream use
+      req.user.highestRole = top;
+
       next();
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Server error", error: err.message });
+      console.error("requireRole error:", err);
+      return res.status(500).json({ message: "Server error", error: err.message });
     }
   };
 }

@@ -30,6 +30,21 @@ router.get(
   saccoController.getAllSACCOs
 );
 
+// ==================== User-SACCO Management Routes ====================
+// Note: placed before generic "/:id" route to avoid routing "users" as an ID
+
+// Get all users in a SACCO (or current user's SACCO)
+router.get(
+  '/users',
+  saccoController.getSACCOUsers
+);
+
+router.get(
+  '/:saccoId/users',
+  verifySaccoAccess,
+  saccoController.getSACCOUsers
+);
+
 // Get SACCO by ID
 router.get(
   '/:id',

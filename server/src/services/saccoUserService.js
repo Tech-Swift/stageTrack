@@ -2,117 +2,126 @@
  * SACCO User Service
  * Business logic for managing user-SACCO relationships
  */
-import { SaccoUser, User, SACCO, SaccoBranch } from '../models/index.js';
+import { SaccoUser, User, SACCO, SaccoBranch, Role, UserRole } from '../models/index.js';
 import { createAuditLog } from './saccoAuditLogService.js';
 
 /**
- * Add a user to a SACCO
- * @param {Object} data - User-SACCO relationship data
- * @param {string} data.user_id - User ID
- * @param {string} data.sacco_id - SACCO ID
- * @param {string} data.branch_id - Branch ID (optional)
- * @param {string} data.role - Role within the SACCO
- * @param {string} assignedBy - User ID assigning the relationship
+ * Add a user to a SACCO and assign a normalized role
+ * @param {Object} data
+ * @param {string} data.user_id
+ * @param {string} data.sacco_id
+ * @param {string} [data.branch_id]
+ * @param {string} data.role_id
+ * @param {string} [data.status] default 'active'
+ * @param {string} assignedBy - Admin assigning the user
  */
 export async function addUserToSACCO(data, assignedBy) {
-  const { user_id, sacco_id, branch_id, role, status = 'active' } = data;
+  const { user_id, sacco_id, branch_id, role_id, status = 'active' } = data;
 
-  // Validate required fields
-  if (!user_id || !sacco_id || !role) {
-    throw new Error('User ID, SACCO ID, and role are required');
+  // Step 3: Validate required fields
+  if (!user_id || !sacco_id || !role_id) {
+    throw new Error('User ID, SACCO ID, and role ID are required');
   }
 
-  // Verify user exists
+    // Fetch user
   const user = await User.findByPk(user_id);
-  if (!user) {
-    throw new Error('User not found');
-  }
+  if (!user) throw new Error('User not found');
 
-  // Verify SACCO exists
+  // Fetch SACCO
   const sacco = await SACCO.findByPk(sacco_id);
-  if (!sacco) {
-    throw new Error('SACCO not found');
+  if (!sacco) throw new Error('SACCO not found');
+
+  // Fetch branch if provided
+  if (branch_id) {
+    const branch = await SaccoBranch.findOne({ where: { id: branch_id, sacco_id } });
+    if (!branch) throw new Error('Branch not found or does not belong to this SACCO');
   }
 
-  // Verify branch exists if provided
-  if (branch_id) {
-    const branch = await SaccoBranch.findOne({
-      where: { id: branch_id, sacco_id }
-    });
-    if (!branch) {
-      throw new Error('Branch not found or does not belong to this SACCO');
+  // Fetch role by ID
+  const role = await Role.findByPk(role_id);
+  if (!role) throw new Error('Role not found');
+
+    // Fetch the admin performing the action
+  const admin = await User.findByPk(assignedBy, {
+    include: [{ model: Role, as: 'roles' }]
+  });
+
+  if (!admin) throw new Error('Admin not found');
+
+  // Super admin bypass
+  const isSuperAdmin = admin.roles.some(r => r.name === 'super_admin');
+
+  if (!isSuperAdmin) {
+    // SACCO isolation
+    if (admin.sacco_id !== sacco_id) {
+      throw new Error('Cannot assign users to a SACCO outside your own');
+    }
+
+    // Hierarchy enforcement
+    const adminMaxHierarchy = Math.max(...admin.roles.map(r => r.hierarchy_level));
+    if (role.hierarchy_level >= adminMaxHierarchy) {
+      throw new Error('Cannot assign a role equal or higher than your own');
     }
   }
 
-  // Check if user is already in this SACCO
-  const existing = await SaccoUser.findOne({
-    where: { user_id, sacco_id }
-  });
+  const existing = await SaccoUser.findOne({ where: { user_id, sacco_id } });
+  if (existing) throw new Error('User is already a member of this SACCO');
 
-  if (existing) {
-    throw new Error('User is already a member of this SACCO');
-  }
-
-  // Create relationship
-  const saccoUser = await SaccoUser.create({
+    const saccoUser = await SaccoUser.create({
     user_id,
     sacco_id,
     branch_id,
-    role,
+    role: role.name, // optional, keep a human-readable field
     status,
     joined_at: new Date()
   });
 
-  // Update user's sacco_id if this is their primary SACCO
+  // Optionally update primary SACCO
   if (!user.sacco_id) {
     await user.update({ sacco_id });
   }
 
-  // Audit log
-  await createAuditLog({
+  // Create normalized role assignment (optional)
+  await UserRole.create({
+    user_uuid: user.id,
+    role_id: role.id
+  });
+
+    await createAuditLog({
     sacco_id,
     user_id: assignedBy,
     action: 'add_user_to_sacco',
     entity: 'sacco_user',
     entity_id: saccoUser.id,
-    metadata: { user_id, role, branch_id }
+    metadata: { user_id, role_id, branch_id }
   });
 
   return saccoUser;
 }
+
 
 /**
  * Get all users in a SACCO
  * @param {string} saccoId - SACCO ID
  * @param {Object} options - Query options
  */
-export async function getSACCOUsers(saccoId, options = {}) {
-  const { branch_id, status, role } = options;
-
+ export async function getSACCOUsers(saccoId, options = {}) {
   const where = { sacco_id: saccoId };
-  if (branch_id) where.branch_id = branch_id;
-  if (status) where.status = status;
-  if (role) where.role = role;
+  
+  if (options.branch_id) where.branch_id = options.branch_id;
+  if (options.status) where.status = options.status;
+  if (options.role) where.role = options.role;
 
-  const saccoUsers = await SaccoUser.findAll({
+  const users = await SaccoUser.findAll({
     where,
     include: [
-      {
-        model: User,
-        as: 'user',
-        attributes: ['id', 'full_name', 'email', 'phone', 'status']
-      },
-      {
-        model: SaccoBranch,
-        as: 'branch',
-        required: false,
-        attributes: ['id', 'name', 'town']
-      }
+      { model: User, as: "member_user", attributes: ["id", "full_name", "email", "phone"] },
+      { model: SaccoBranch, as: "branch", attributes: ["id", "name"] }
     ],
-    order: [['joined_at', 'DESC']]
+    order: [["joined_at", "ASC"]]
   });
 
-  return saccoUsers;
+  return users;
 }
 
 /**

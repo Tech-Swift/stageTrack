@@ -6,38 +6,52 @@
  * - All queries are automatically filtered by sacco_id
  * - Super admins can access all data
  */
-
+import SaccoUser from '../models/Sacco/SaccoUser.js';
 import { Role } from '../models/index.js';
 
 /**
  * Middleware to enforce SACCO isolation
  * Automatically filters queries by sacco_id based on the authenticated user
  */
-export function enforceSaccoIsolation(req, res, next) {
-  // Store the user's SACCO context
-  req.saccoContext = {
-    saccoId: req.user?.sacco_id || null,
-    isSuperAdmin: false // Will be set by role check
-  };
 
-  // Add helper method to get SACCO filter
-  req.getSaccoFilter = () => {
-    // Super admins can see all data
-    if (req.saccoContext.isSuperAdmin) {
-      return {}; // No filter for super admin
-    }
+export const enforceSaccoIsolation = (req, res, next) => {
+  const user = req.user;
 
-    // Regular users can only see their SACCO's data
-    if (req.saccoContext.saccoId) {
-      return { sacco_id: req.saccoContext.saccoId };
-    }
+  // 🔑 Super admin bypass
+  const isSuperAdmin = user.roles?.some(
+    role => role.name === "super_admin"
+  );
 
-    // Users without SACCO assignment can't see any SACCO data
-    return { sacco_id: null }; // This will return empty results
-  };
+  if (isSuperAdmin) {
+    return next();
+  }
+
+  // Normal users must belong to a sacco
+  if (!user.sacco_id) {
+    return res.status(403).json({
+      message: "User is not associated with a SACCO"
+    });
+  }
+
+  const saccoIdFromRequest =
+    req.params.sacco_id ||
+    req.body.sacco_id ||
+    req.query.sacco_id;
+
+  if (!saccoIdFromRequest) {
+    return res.status(400).json({
+      message: "SACCO ID is required"
+    });
+  }
+
+  if (user.sacco_id !== saccoIdFromRequest) {
+    return res.status(403).json({
+      message: "Access denied for this SACCO"
+    });
+  }
 
   next();
-}
+};
 
 /**
  * Middleware to check if user is super admin
@@ -98,27 +112,81 @@ export function applySaccoFilter(query, saccoId, isSuperAdmin = false) {
 /**
  * Middleware to verify user belongs to the SACCO they're trying to access
  */
-export function verifySaccoAccess(req, res, next) {
-  const requestedSaccoId = req.params.saccoId || req.params.id || req.body.sacco_id || req.query.sacco_id;
+export async function verifySaccoAccess(req, res, next) {
+  try {
+    // normalize candidate sacco id from common locations
+    let requestedSaccoId =
+      req.params.saccoId ||
+      req.params.id ||
+      req.body.sacco_id ||
+      req.query.sacco_id;
 
-  // Super admin can access any SACCO
-  if (req.saccoContext?.isSuperAdmin) {
+    // ensure authenticated user
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // 1️⃣ Super admin can access everything
+    if (req.saccoContext?.isSuperAdmin) {
+      return next();
+    }
+
+    // if no SACCO specified, allow (controllers will apply filters)
+    if (!requestedSaccoId) {
+      return next();
+    }
+
+    // sometimes routes like "/users" can be matched into params/id — ignore non-UUID values
+    const isUuid = typeof requestedSaccoId === 'string' && /^[0-9a-fA-F-]{36}$/.test(requestedSaccoId);
+    if (!isUuid) {
+      // not a UUID — skip membership check
+      return next();
+    }
+
+    // 🔒 Hard rule: sacco_admin may only act within their own sacco
+    if (
+      req.user.role === 'sacco_admin' &&
+      req.user.sacco_id &&
+      String(requestedSaccoId) !== String(req.user.sacco_id)
+    ) {
+      return res.status(403).json({
+        message: 'Unauthorized SACCO action'
+      });
+    }
+
+    // primary SACCO match (fast path)
+    if (req.user?.sacco_id && String(req.user.sacco_id) === String(requestedSaccoId)) {
+      return next();
+    }
+
+    // fallback: check sacco_users membership (only run with validated UUID)
+    let membership;
+    try {
+      membership = await SaccoUser.findOne({
+        where: {
+          user_id: req.user.id,
+          sacco_id: requestedSaccoId,
+          status: 'active'
+        }
+      });
+    } catch (dbErr) {
+      console.error('verifySaccoAccess DB error:', dbErr);
+      return res.status(500).json({ message: 'Database error while verifying SACCO access' });
+    }
+
+    if (!membership) {
+      return res.status(403).json({
+        message: "Access denied: You do not have permission to access this SACCO's data"
+      });
+    }
+
+    // attach membership for downstream handlers if needed
+    req.saccoMembership = membership;
     return next();
+  } catch (err) {
+    console.error('verifySaccoAccess error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
   }
-
-  // If no SACCO ID specified, allow (will be filtered by user's SACCO in controller)
-  if (!requestedSaccoId) {
-    return next();
-  }
-
-  // User must belong to the requested SACCO
-  if (requestedSaccoId !== req.user?.sacco_id) {
-    return res.status(403).json({ 
-      message: 'Access denied: You do not have permission to access this SACCO\'s data' 
-    });
-  }
-
-  next();
 }
 
 export default {
