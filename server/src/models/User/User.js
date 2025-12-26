@@ -44,10 +44,7 @@ const User = sequelize.define(
 
 // Associations
 User.belongsTo(SACCO, { foreignKey: "sacco_id", as: "sacco" });
-User.belongsTo(Stage, { foreignKey: "stage_id", as: "stage" });
-
 SACCO.hasMany(User, { foreignKey: "sacco_id", as: "users" });
-Stage.hasMany(User, { foreignKey: "stage_id", as: "users" });
 
 User.belongsToMany(Role, { through: UserRole, foreignKey: "user_uuid", otherKey: "role_id", as: "roles" });
 Role.belongsToMany(User, { through: UserRole, foreignKey: "role_id", otherKey: "user_uuid", as: "users" });

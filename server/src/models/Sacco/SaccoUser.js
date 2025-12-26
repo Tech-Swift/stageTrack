@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import { sequelize } from "../../config/db.js";
+import { sequelize } from "../../config/db.js"; // default import matches your db export
 
 const SaccoUser = sequelize.define(
   "SaccoUser",
@@ -10,21 +10,24 @@ const SaccoUser = sequelize.define(
       defaultValue: DataTypes.UUIDV4 
     },
     user_id: { 
-      type: DataTypes.UUID 
+      type: DataTypes.UUID,
+      allowNull: false
     },
     sacco_id: { 
-      type: DataTypes.UUID 
+      type: DataTypes.UUID,
+      allowNull: false
     },
     branch_id: { 
       type: DataTypes.UUID 
-    }, // Optional: user can be assigned to a specific branch
+    },
     role: { 
       type: DataTypes.STRING(50), 
       allowNull: false 
-    }, // Role within the SACCO (may differ from global roles)
+    },
     status: { 
-      type: DataTypes.STRING(20) 
-    }, // active, suspended, inactive
+      type: DataTypes.STRING(20),
+      defaultValue: 'active'
+    },
     joined_at: { 
       type: DataTypes.DATE, 
       defaultValue: DataTypes.NOW 
@@ -32,17 +35,15 @@ const SaccoUser = sequelize.define(
   },
   {
     tableName: "sacco_users",
-    timestamps: false, // Only joined_at, no created_at/updated_at
+    timestamps: false,
+    underscored: true,
     indexes: [
       {
         unique: true,
-        fields: ['user_id', 'sacco_id'] // A user can only be in a SACCO once
+        fields: ['user_id', 'sacco_id']
       }
     ]
   }
 );
 
-// Associations will be set up in associations.js
-
 export default SaccoUser;
-

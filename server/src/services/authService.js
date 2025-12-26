@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import { Op } from "sequelize";
 import User from "../models/User/User.js";
+import SaccoUser from "../models/Sacco/SaccoUser.js";
 import Role from "../models/User/Role.js";
 import { signToken } from "../utils/jwt.js"; // your JWT helper
 
@@ -62,25 +63,45 @@ export async function loginUser(identifier, password) {
     where: { [Op.or]: [{ email: identifier }, { phone: identifier }] },
     include: [
       { model: Role, as: "roles", through: { attributes: [] }, attributes: ["id", "name", "hierarchy_level"] },
+      {
+        model: SaccoUser,
+        as: "sacco_memberships",
+        attributes: ["role", "sacco_id"],
+        where: { status: "active" },
+        required: false
+      },
+      "roles",
       "sacco",
       "stage"
     ]
   });
+
   if (!user) throw new Error("Invalid credentials");
 
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) throw new Error("Invalid credentials");
 
+  // Get the first active SACCO membership (adjust if multiple)
+  const saccoMembership = user.sacco_memberships?.[0];
+
   const token = signToken({
     id: user.id,
     email: user.email,
-    role: user.role,
-    sacco_id: user.sacco_id,
+    role: saccoMembership?.role || null, // ✅ attach SACCO role
+    sacco_id: saccoMembership?.sacco_id || null,
     stage_id: user.stage_id
   });
 
-  return { user, token };
+  return {
+    user: {
+      ...user.toJSON(),
+      roles: saccoMembership ? [saccoMembership.role] : [],
+      sacco_id: saccoMembership?.sacco_id || null
+    },
+    token
+  };
 }
+
 
 
 export async function assignRolesToUser(userId, roleIds, assignedBy) {
@@ -113,8 +134,6 @@ export async function getUsers(saccoId = null) {
     ]
   });
 }
-
-
 /**
  * Get single user by ID
  */

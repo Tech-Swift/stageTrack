@@ -9,9 +9,9 @@ router.post("/register", register);
 router.post("/login", login);
 
 // Protected
-router.get("/users", authenticate, listUsers);
-router.get("/users/:id", authenticate, getUser);
-router.put("/users/:id/roles", authenticate, updateUserRoles);
+router.get("/", authenticate, listUsers);
+router.get("/:id", authenticate, getUser);
+router.put("/:id/roles", authenticate, updateUserRoles);
 
 
 export default router;

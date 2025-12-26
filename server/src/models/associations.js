@@ -13,14 +13,15 @@ import SaccoSettings from './Sacco/SaccoSettings.js';
 import SaccoAuditLog from './Sacco/SaccoAuditLog.js';
 import Stage from './stage.model.js';
 
-// Role <-> Permission (Many-to-Many through RolePermission)
+// -------------------- Role & Permission --------------------
+
+// Role <-> Permission (Many-to-Many)
 Role.belongsToMany(Permission, { 
   through: RolePermission, 
   foreignKey: 'role_id', 
   otherKey: 'permission_id', 
   as: 'permissions' 
 });
-
 Permission.belongsToMany(Role, { 
   through: RolePermission, 
   foreignKey: 'permission_id', 
@@ -33,20 +34,21 @@ RolePermission.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
 RolePermission.belongsTo(Permission, { foreignKey: 'permission_id', as: 'permission' });
 RolePermission.belongsTo(User, { foreignKey: 'granted_by_uuid', as: 'grantedBy' });
 
-// UserSession associations
+// -------------------- User Session --------------------
 UserSession.belongsTo(User, { foreignKey: 'user_uuid', as: 'user' });
 User.hasMany(UserSession, { foreignKey: 'user_uuid', as: 'sessions' });
 
-// SACCO Multi-Tenancy Associations
-// SACCO has many branches
+// -------------------- SACCO Multi-Tenancy --------------------
+
+// SACCO ↔ Branch
 SACCO.hasMany(SaccoBranch, { foreignKey: 'sacco_id', as: 'branches' });
 SaccoBranch.belongsTo(SACCO, { foreignKey: 'sacco_id', as: 'sacco' });
 
-// SACCO has one settings record
+// SACCO ↔ Settings
 SACCO.hasOne(SaccoSettings, { foreignKey: 'sacco_id', as: 'settings' });
 SaccoSettings.belongsTo(SACCO, { foreignKey: 'sacco_id', as: 'sacco' });
 
-// SACCO has many users (through sacco_users)
+// SACCO ↔ User (many-to-many through SaccoUser)
 SACCO.belongsToMany(User, { 
   through: SaccoUser, 
   foreignKey: 'sacco_id', 
@@ -60,10 +62,19 @@ User.belongsToMany(SACCO, {
   as: 'saccos' 
 });
 
-// SaccoUser associations
-SaccoUser.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+// -------------------- User ↔ SaccoUser (for login and role checks) --------------------
+
+// User has many SACCO memberships (for login)
+User.hasMany(SaccoUser, { as: 'sacco_memberships', foreignKey: 'user_id' });
+
+// SaccoUser belongs to User (alias changed to avoid conflicts)
+SaccoUser.belongsTo(User, { foreignKey: 'user_id', as: 'member_user' });
+
+// SaccoUser belongs to SACCO and optionally branch
 SaccoUser.belongsTo(SACCO, { foreignKey: 'sacco_id', as: 'sacco' });
 SaccoUser.belongsTo(SaccoBranch, { foreignKey: 'branch_id', as: 'branch' });
+
+// -------------------- SACCO Audit Logs --------------------
 
 // SACCO has many audit logs
 SACCO.hasMany(SaccoAuditLog, { foreignKey: 'sacco_id', as: 'auditLogs' });
@@ -73,12 +84,14 @@ SaccoAuditLog.belongsTo(SACCO, { foreignKey: 'sacco_id', as: 'sacco' });
 User.hasMany(SaccoAuditLog, { foreignKey: 'user_id', as: 'auditLogs' });
 SaccoAuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
-// Branch has many users
+// Branch has many SACCO users
 SaccoBranch.hasMany(SaccoUser, { foreignKey: 'branch_id', as: 'users' });
 
-// Note: User <-> Role associations are already set up in User.js
-// Note: User <-> SACCO (direct) and User <-> Stage associations are already set up in User.js
+// -------------------- Stage --------------------
+User.belongsTo(Stage, { foreignKey: 'stage_id', as: 'stage' });
+Stage.hasMany(User, { foreignKey: 'stage_id', as: 'users' });
 
+// -------------------- Export Models --------------------
 export default {
   User,
   Role,
@@ -93,4 +106,3 @@ export default {
   SaccoAuditLog,
   Stage
 };
-
