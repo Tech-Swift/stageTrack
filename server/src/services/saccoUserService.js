@@ -111,7 +111,13 @@ export async function addUserToSACCO(data, assignedBy) {
   
   if (options.branch_id) where.branch_id = options.branch_id;
   if (options.status) where.status = options.status;
-  if (options.role) where.role = options.role;
+
+  // support array of roles (IN) or single role string
+  if (options.roles && Array.isArray(options.roles) && options.roles.length) {
+    where.role = options.roles; // Sequelize treats array as IN
+  } else if (options.role) {
+    where.role = options.role;
+  }
 
   const users = await SaccoUser.findAll({
     where,

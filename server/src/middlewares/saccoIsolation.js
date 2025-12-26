@@ -15,43 +15,54 @@ import { Role } from '../models/index.js';
  */
 
 export const enforceSaccoIsolation = (req, res, next) => {
-  const user = req.user;
+  const user = req.user || {};
 
-  // 🔑 Super admin bypass
-  const isSuperAdmin = user.roles?.some(
-    role => role.name === "super_admin"
-  );
+  // Normalize roles (support roles array of objects or single role string)
+  const roles = Array.isArray(user.roles)
+    ? user.roles.map(r => (typeof r === 'string' ? r : r?.name)).filter(Boolean)
+    : (typeof user.role === 'string' ? [user.role] : []);
 
+  const isSuperAdmin = roles.includes('super_admin');
+
+  // Debug
+  console.log('=== enforceSaccoIsolation ===');
+  console.log('req.user.id:', user.id);
+  console.log('req.user.sacco_id:', user.sacco_id);
+  console.log('roles:', roles, 'isSuperAdmin:', isSuperAdmin);
+  console.log('req.params:', req.params);
+  console.log('req.query:', req.query);
+  console.log('req.body keys:', Object.keys(req.body || {}));
+
+  // Super admin bypass
   if (isSuperAdmin) {
+    console.log('Super admin bypassing sacco isolation');
     return next();
   }
 
-  // Normal users must belong to a sacco
+  // Normal users must be associated with a SACCO
   if (!user.sacco_id) {
-    return res.status(403).json({
-      message: "User is not associated with a SACCO"
-    });
+    console.log('Blocking: user has no sacco_id');
+    return res.status(403).json({ message: 'User is not associated with a SACCO' });
   }
 
-  // ✅ Check saccoId FIRST (for routes like /:saccoId/branches/:id)
-  const saccoIdFromRequest =
-    req.params.saccoId ||
-    req.params.sacco_id ||
-    req.params.id ||
-    req.body.sacco_id ||
-    req.query.sacco_id;
+  // Prefer saccoId param first (routes like /:saccoId/branches/:id), then fallback to other locations
+  const saccoIdFromRequest = (
+    (req.params?.saccoId && String(req.params.saccoId).trim()) ||
+    (req.params?.sacco_id && String(req.params.sacco_id).trim()) ||
+    (req.params?.id && String(req.params.id).trim()) ||
+    (req.body?.sacco_id && String(req.body.sacco_id).trim()) ||
+    (req.query?.sacco_id && String(req.query.sacco_id).trim())
+  ) || undefined;
 
- 
+  console.log('Extracted saccoIdFromRequest:', saccoIdFromRequest);
+
   if (!saccoIdFromRequest) {
-    return res.status(400).json({
-      message: "SACCO ID is required"
-    });
+    return res.status(400).json({ message: 'SACCO ID is required' });
   }
 
   if (user.sacco_id !== saccoIdFromRequest) {
-    return res.status(403).json({
-      message: "Access denied for this SACCO"
-    });
+    console.log('Access denied: user.sacco_id != requested saccoId');
+    return res.status(403).json({ message: 'Access denied for this SACCO' });
   }
 
   next();

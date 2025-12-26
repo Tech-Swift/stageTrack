@@ -6,6 +6,50 @@ import * as saccoService from '../services/saccoService.js';
 import * as branchService from '../services/saccoBranchService.js';
 import * as saccoUserService from '../services/saccoUserService.js';
 
+// GET /api/saccos/:saccoId/users?role=admin,driver
+export async function getSACCOUsers(req, res) {
+  try {
+    const requester = req.user || {};
+    let { saccoId } = req.params;
+    // parse role query param (comma separated)
+    const roleParam = (req.query.role || '').trim();
+    const roles = roleParam ? roleParam.split(',').map(r => r.trim()).filter(Boolean) : undefined;
+
+    const requesterRoles = Array.isArray(requester.roles)
+      ? requester.roles.map(r => (typeof r === 'string' ? r : r.name))
+      : (requester.role ? [requester.role] : []);
+
+    const isSuperAdmin = requesterRoles.includes('super_admin');
+
+    // Non-super admins must operate within their sacco
+    if (!isSuperAdmin) {
+      // if no saccoId provided, default to requester's sacco_id
+      if (!saccoId) saccoId = requester.sacco_id;
+      if (!saccoId || saccoId !== requester.sacco_id) {
+        return res.status(403).json({ message: 'Access denied for this SACCO' });
+      }
+    } else {
+      // super admin may omit saccoId to get across all saccos - require saccoId for scoped query
+      if (!saccoId) {
+        // if super admin wants all sacco users across system, call service without saccoId
+        // fallback: return error asking to provide saccoId or use dedicated endpoint
+        return res.status(400).json({ message: 'saccoId is required for scoped queries (or use admin list endpoint)' });
+      }
+    }
+
+    const options = {};
+    if (req.query.branch_id) options.branch_id = req.query.branch_id;
+    if (req.query.status) options.status = req.query.status;
+    if (roles) options.roles = roles;
+
+    const users = await saccoUserService.getSACCOUsers(saccoId, options);
+    return res.json(users);
+  } catch (err) {
+    console.error('getSACCOUsers error:', err);
+    return res.status(500).json({ message: err.message });
+  }
+}
+
 export async function getSACCOUserById(req, res) {
   const { saccoId, id } = req.params;
   try {
@@ -196,27 +240,6 @@ export async function addUserToSACCO(req, res) {
     res.status(201).json({ message: 'User added to SACCO successfully', saccoUser });
   } catch (error) {
     res.status(400).json({ message: error.message });
-  }
-}
-
-export async function getSACCOUsers(req, res) {
-  try {
-    const saccoId = req.user.sacco_id || req.query.sacco_id;
-    
-    if (!saccoId && !req.saccoContext?.isSuperAdmin) {
-      return res.status(403).json({ message: 'SACCO ID is required' });
-    }
-
-    const options = {
-      branch_id: req.query.branch_id,
-      status: req.query.status,
-      role: req.query.role
-    };
-
-    const users = await saccoUserService.getSACCOUsers(saccoId, options);
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
 }
 
