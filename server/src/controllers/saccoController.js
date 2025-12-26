@@ -5,10 +5,17 @@
 import * as saccoService from '../services/saccoService.js';
 import * as branchService from '../services/saccoBranchService.js';
 import * as saccoUserService from '../services/saccoUserService.js';
-import * as settingsService from '../services/saccoSettingsService.js';
-import * as auditLogService from '../services/saccoAuditLogService.js';
 
-// ==================== SACCO CRUD ====================
+export async function getSACCOUserById(req, res) {
+  const { saccoId, id } = req.params;
+  try {
+    const saccoUser = await saccoUserService.getSACCOUserById(saccoId, id);
+    return res.json(saccoUser);
+  } catch (err) {
+    const status = err.message.includes('not found') ? 404 : 400;
+    return res.status(status).json({ message: err.message });
+  }
+}
 
 export async function createSACCO(req, res) {
   try {

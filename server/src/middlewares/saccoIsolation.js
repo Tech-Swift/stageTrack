@@ -41,13 +41,7 @@ export const enforceSaccoIsolation = (req, res, next) => {
     req.body.sacco_id ||
     req.query.sacco_id;
 
-  console.log('=== enforceSaccoIsolation Debug ===');
-  console.log('URL:', req.originalUrl);
-  console.log('req.params:', req.params);
-  console.log('User sacco_id:', user.sacco_id);
-  console.log('Extracted saccoIdFromRequest:', saccoIdFromRequest);
-  console.log('=====================================');
-
+ 
   if (!saccoIdFromRequest) {
     return res.status(400).json({
       message: "SACCO ID is required"

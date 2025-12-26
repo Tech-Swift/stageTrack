@@ -162,6 +162,15 @@ router.get(
   saccoController.getSACCOUsers
 );
 
+// Get single SACCO user by id
+router.get(
+  '/:saccoId/users/:id',
+  enforceSaccoIsolation,
+  verifySaccoAccess,
+  requireRole('admin'), // or remove/adjust role check as needed
+  saccoController.getSACCOUserById
+);
+
 // Update user's SACCO relationship
 router.put(
   '/:saccoId/users/:id',
