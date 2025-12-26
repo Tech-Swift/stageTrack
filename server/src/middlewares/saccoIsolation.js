@@ -33,12 +33,20 @@ export const enforceSaccoIsolation = (req, res, next) => {
     });
   }
 
+  // ✅ Check saccoId FIRST (for routes like /:saccoId/branches/:id)
   const saccoIdFromRequest =
-    req.params.id ||
-    req.params.sacco_id ||
     req.params.saccoId ||
+    req.params.sacco_id ||
+    req.params.id ||
     req.body.sacco_id ||
     req.query.sacco_id;
+
+  console.log('=== enforceSaccoIsolation Debug ===');
+  console.log('URL:', req.originalUrl);
+  console.log('req.params:', req.params);
+  console.log('User sacco_id:', user.sacco_id);
+  console.log('Extracted saccoIdFromRequest:', saccoIdFromRequest);
+  console.log('=====================================');
 
   if (!saccoIdFromRequest) {
     return res.status(400).json({
