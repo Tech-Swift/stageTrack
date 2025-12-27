@@ -54,15 +54,18 @@ export function requireRole(minRole) {
   return (req, res, next) => {
     try {
       if (!req.user) {
+        console.log("requireRole: No user found on request");
         return res.status(401).json({ message: "Unauthenticated" });
       }
 
-      // Normalize roles whether provided as:
-      // - req.user.roles = [ { id, name, ... }, ... ]
-      // - req.user.roles = [ 'admin', ... ]
-      // - req.user.role  = 'sacco_admin' (legacy/single string)
-      let roleNames = [];
+      // ✅ Super admin bypass
+      if (req.user.system_roles?.includes("super_admin")) {
+        console.log(`requireRole: Super admin bypass for user ${req.user.id}`);
+        return next();
+      }
 
+      // Normalize roles from req.user.roles or req.user.role
+      let roleNames = [];
       if (Array.isArray(req.user.roles) && req.user.roles.length > 0) {
         roleNames = req.user.roles.map((r) =>
           typeof r === "string" ? r : r?.name || ""
@@ -71,7 +74,10 @@ export function requireRole(minRole) {
         roleNames = [req.user.role];
       }
 
+      console.log(`requireRole: user ${req.user.id} roles detected`, roleNames);
+
       const top = highestRole(roleNames);
+      console.log(`requireRole: highest role determined for user ${req.user.id}:`, top);
 
       if (!top) {
         return res.status(403).json({
@@ -96,6 +102,7 @@ export function requireRole(minRole) {
       }
 
       req.user.highestRole = top;
+      console.log(`requireRole: user ${req.user.id} passed role check`);
 
       next();
     } catch (err) {
@@ -104,3 +111,4 @@ export function requireRole(minRole) {
     }
   };
 }
+

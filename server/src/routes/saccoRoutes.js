@@ -10,39 +10,23 @@ import * as saccoController from '../controllers/saccoController.js';
 
 const router = express.Router();
 
-// Apply authentication (enforceSaccoIsolation removed from global middleware)
+// -------------------- GLOBAL MIDDLEWARE --------------------
+// Authentication applied globally
 router.use(authenticate);
-router.use(checkSuperAdmin);
+router.use(checkSuperAdmin); // sets req.saccoContext?.isSuperAdmin
 
-// ==================== SACCO CRUD Routes ====================
-
-// Create SACCO (super admin only)
+// -------------------- SACCO CRUD --------------------
+// Create SACCO (super_admin only)
 router.post(
   '/',
   requireRole('super_admin'),
   saccoController.createSACCO
 );
 
-// Get all SACCOs (filtered by user's SACCO unless super admin)
+// Get all SACCOs
 router.get(
   '/',
   saccoController.getAllSACCOs
-);
-
-// ==================== User-SACCO Management Routes ====================
-// Note: placed before generic "/:id" route to avoid routing "users" as an ID
-
-// Get all users in a SACCO (or current user's SACCO)
-router.get(
-  '/users',
-  saccoController.getSACCOUsers
-);
-
-router.get(
-  '/:saccoId/users',
-  enforceSaccoIsolation,
-  verifySaccoAccess,
-  saccoController.getSACCOUsers
 );
 
 // Get SACCO by ID
@@ -62,7 +46,7 @@ router.put(
   saccoController.updateSACCO
 );
 
-// Suspend SACCO (super admin)
+// Suspend SACCO
 router.patch(
   '/:id/suspend',
   enforceSaccoIsolation,
@@ -71,7 +55,7 @@ router.patch(
   saccoController.suspendSACCO
 );
 
-// Activate SACCO (super admin)
+// Activate SACCO
 router.patch(
   '/:id/activate',
   enforceSaccoIsolation,
@@ -80,7 +64,7 @@ router.patch(
   saccoController.activateSACCO
 );
 
-// Get SACCO statistics
+// SACCO stats
 router.get(
   '/:id/stats',
   enforceSaccoIsolation,
@@ -88,8 +72,7 @@ router.get(
   saccoController.getSACCOStats
 );
 
-// ==================== Branch Management Routes ====================
-
+// -------------------- BRANCH MANAGEMENT --------------------
 // Create branch
 router.post(
   '/:saccoId/branches',
@@ -99,7 +82,7 @@ router.post(
   saccoController.createBranch
 );
 
-// Get all branches for a SACCO (or current user's SACCO)
+// Get all branches (filtered by SACCO or super_admin)
 router.get(
   '/branches',
   saccoController.getBranches
@@ -112,7 +95,7 @@ router.get(
   saccoController.getBranches
 );
 
-// Get branch by ID
+// Branch by ID
 router.get(
   '/:saccoId/branches/:id',
   enforceSaccoIsolation,
@@ -138,8 +121,7 @@ router.delete(
   saccoController.deleteBranch
 );
 
-// ==================== User-SACCO Management Routes ====================
-
+// -------------------- USER-SACCO MANAGEMENT --------------------
 // Add user to SACCO
 router.post(
   '/:saccoId/users',
@@ -149,7 +131,7 @@ router.post(
   saccoController.addUserToSACCO
 );
 
-// Get all users in a SACCO (or current user's SACCO)
+// Get all users in SACCO
 router.get(
   '/users',
   saccoController.getSACCOUsers
@@ -162,16 +144,16 @@ router.get(
   saccoController.getSACCOUsers
 );
 
-// Get single SACCO user by id
+// Single SACCO user
 router.get(
   '/:saccoId/users/:id',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  requireRole('admin'), // or remove/adjust role check as needed
+  requireRole('admin'),
   saccoController.getSACCOUserById
 );
 
-// Update user's SACCO relationship
+// Update SACCO user
 router.put(
   '/:saccoId/users/:id',
   enforceSaccoIsolation,
@@ -180,7 +162,7 @@ router.put(
   saccoController.updateSACCOUser
 );
 
-// Remove user from SACCO
+// Remove user
 router.delete(
   '/:saccoId/users/:id',
   enforceSaccoIsolation,
@@ -195,9 +177,8 @@ router.get(
   saccoController.getUserSACCOs
 );
 
-// ==================== Settings Management Routes ====================
-
-// Get SACCO settings
+// -------------------- SETTINGS --------------------
+// SACCO settings
 router.get(
   '/:id/settings',
   enforceSaccoIsolation,
@@ -205,7 +186,6 @@ router.get(
   saccoController.getSACCOSettings
 );
 
-// Update SACCO settings
 router.put(
   '/:id/settings',
   enforceSaccoIsolation,
@@ -214,7 +194,6 @@ router.put(
   saccoController.updateSACCOSettings
 );
 
-// Reset SACCO settings to defaults
 router.post(
   '/:id/settings/reset',
   enforceSaccoIsolation,
@@ -223,9 +202,7 @@ router.post(
   saccoController.resetSACCOSettings
 );
 
-// ==================== Audit Log Routes ====================
-
-// Get audit logs for a SACCO
+// -------------------- AUDIT LOGS --------------------
 router.get(
   '/:id/audit-logs',
   enforceSaccoIsolation,
@@ -233,7 +210,6 @@ router.get(
   saccoController.getAuditLogs
 );
 
-// Get audit logs for a specific entity
 router.get(
   '/:id/audit-logs/:entity/:entityId',
   enforceSaccoIsolation,
@@ -242,4 +218,3 @@ router.get(
 );
 
 export default router;
-

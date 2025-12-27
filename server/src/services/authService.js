@@ -59,10 +59,17 @@ export async function registerUser({
  * Login user
  */
 export async function loginUser(identifier, password) {
+  console.log("LOGIN FUNCTION VERSION: SYSTEM + SACCO ROLES");
+
   const user = await User.findOne({
     where: { [Op.or]: [{ email: identifier }, { phone: identifier }] },
     include: [
-      { model: Role, as: "roles", through: { attributes: [] }, attributes: ["id", "name", "hierarchy_level"] },
+      {
+        model: Role,
+        as: "roles",
+        through: { attributes: [] },
+        attributes: ["id", "name", "hierarchy_level"]
+      },
       {
         model: SaccoUser,
         as: "sacco_memberships",
@@ -70,7 +77,6 @@ export async function loginUser(identifier, password) {
         where: { status: "active" },
         required: false
       },
-      "roles",
       "sacco",
       "stage"
     ]
@@ -81,21 +87,30 @@ export async function loginUser(identifier, password) {
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) throw new Error("Invalid credentials");
 
-  // Get the first active SACCO membership (adjust if multiple)
-  const saccoMembership = user.sacco_memberships?.[0];
+  // Detect if user has super_admin system role
+  const isSuperAdmin = user.roles?.some(r => r.name === "super_admin");
 
+  // Assign system_roles accordingly
+  const systemRoles = isSuperAdmin ? ["super_admin"] : user.roles?.map(r => r.name) || [];
+
+  // Get first active SACCO membership (for non-super_admin local users)
+  const saccoMembership = isSuperAdmin ? null : user.sacco_memberships?.[0];
+
+  // Sign JWT
   const token = signToken({
     id: user.id,
     email: user.email,
-    role: saccoMembership?.role || null, // ✅ attach SACCO role
+    system_roles: systemRoles,                 // global roles
+    sacco_role: saccoMembership?.role || null, // local SACCO role
     sacco_id: saccoMembership?.sacco_id || null,
-    stage_id: user.stage_id
+    stage_id: user.stage_id || null
   });
 
   return {
     user: {
       ...user.toJSON(),
-      roles: saccoMembership ? [saccoMembership.role] : [],
+      system_roles: systemRoles,
+      sacco_role: saccoMembership?.role || null,
       sacco_id: saccoMembership?.sacco_id || null
     },
     token
