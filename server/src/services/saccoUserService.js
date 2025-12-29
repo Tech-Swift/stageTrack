@@ -138,10 +138,10 @@ export async function addUserToSACCO(data, assignedBy) {
  * @param {string} saccoId - SACCO ID (for multi-tenancy check)
  * @param {string} userId - User ID performing the update
  */
-export async function updateSACCOUser(saccoUserId, data, saccoId, userId) {
+export async function updateSACCOUser(userId, data, saccoId, updatedByUserId) {
   const saccoUser = await SaccoUser.findOne({
     where: {
-      id: saccoUserId,
+      user_id: userId,
       sacco_id: saccoId // Multi-tenancy isolation
     }
   });
@@ -155,7 +155,7 @@ export async function updateSACCOUser(saccoUserId, data, saccoId, userId) {
   // Update allowed fields
   const allowedFields = ['branch_id', 'role', 'status'];
   const updateData = {};
-  
+
   allowedFields.forEach(field => {
     if (data[field] !== undefined) {
       updateData[field] = data[field];
@@ -177,15 +177,16 @@ export async function updateSACCOUser(saccoUserId, data, saccoId, userId) {
   // Audit log
   await createAuditLog({
     sacco_id: saccoId,
-    user_id: userId,
+    user_id: updatedByUserId,
     action: 'update_sacco_user',
     entity: 'sacco_user',
-    entity_id: saccoUserId,
+    entity_id: saccoUser.id,
     metadata: { old_data: oldData, new_data: updateData }
   });
 
   return saccoUser;
 }
+
 
 /**
  * Remove user from SACCO
