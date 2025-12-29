@@ -5,7 +5,13 @@ import SaccoBranch from './Sacco/SaccoBranch.js';
 import SaccoUser from './Sacco/SaccoUser.js';
 import SaccoSettings from './Sacco/SaccoSettings.js';
 import SaccoAuditLog from './Sacco/SaccoAuditLog.js';
-import Stage from './stage.model.js';
+// Stage models
+import County from './Stage/County.model.js';
+import Route from './Stage/Route.model.js';
+import Stage from './Stage/stage.model.js';
+import StageAssignment from './Stage/StageAssignment.js';
+import StageCapacityRule from './Stage/CapacityRule.js';
+import StageLog from './Stage/Stagelog.js';
 import Role from './User/Role.js';
 import Permission from './User/Permission.js';
 import UserRole from './User/user_role.js';
@@ -25,7 +31,12 @@ export {
   SaccoUser,
   SaccoSettings,
   SaccoAuditLog,
+  County,
+  Route,
   Stage,
+  StageAssignment,
+  StageCapacityRule,
+  StageLog,
   Role,
   Permission,
   UserRole,
@@ -41,7 +52,12 @@ export default {
   SaccoUser,
   SaccoSettings,
   SaccoAuditLog,
+  County,
+  Route,
   Stage,
+  StageAssignment,
+  StageCapacityRule,
+  StageLog,
   Role,
   Permission,
   UserRole,

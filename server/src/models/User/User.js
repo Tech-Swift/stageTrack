@@ -3,7 +3,7 @@ import { sequelize } from "../../config/db.js";
 import UserRole from "./user_role.js";
 import Role from "./Role.js";
 import SACCO from "../Sacco/sacco.model.js";
-import Stage from "../stage.model.js";
+import Stage from "../Stage/stage.model.js";
 
 const User = sequelize.define(
   "User",

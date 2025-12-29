@@ -8,6 +8,7 @@ import './src/models/index.js';
 import authRoutes from './src/routes/authRoutes.js';
 import roleRoutes from "./src/routes/roleRoutes.js";
 import saccoRoutes from "./src/routes/saccoRoutes.js";
+import stageRoutes from "./src/routes/stageRoutes.js";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/saccos", saccoRoutes);
+app.use("/api/stages", stageRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -43,6 +45,7 @@ const startServer = async () => {
     // Sync models with database
     // alter: true - alters tables to match models (safe for development)
     // force: false - doesn't drop tables (use force: true only if you want to recreate all tables)
+    // Note: If you encounter column type errors, you may need to drop the problematic table first
     await sequelize.sync({ alter: true });
     console.log('Database models synchronized successfully.');
 

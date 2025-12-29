@@ -11,7 +11,13 @@ import SaccoBranch from './Sacco/SaccoBranch.js';
 import SaccoUser from './Sacco/SaccoUser.js';
 import SaccoSettings from './Sacco/SaccoSettings.js';
 import SaccoAuditLog from './Sacco/SaccoAuditLog.js';
-import Stage from './stage.model.js';
+// Stage models
+import County from './Stage/County.model.js';
+import Route from './Stage/Route.model.js';
+import Stage from './Stage/stage.model.js';
+import StageAssignment from './Stage/StageAssignment.js';
+import StageCapacityRule from './Stage/CapacityRule.js';
+import StageLog from './Stage/Stagelog.js';
 
 // -------------------- Role & Permission --------------------
 
@@ -87,9 +93,39 @@ SaccoAuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 // Branch has many SACCO users
 SaccoBranch.hasMany(SaccoUser, { foreignKey: 'branch_id', as: 'users' });
 
-// -------------------- Stage --------------------
-User.belongsTo(Stage, { foreignKey: 'stage_id', as: 'stage' });
-Stage.hasMany(User, { foreignKey: 'stage_id', as: 'users' });
+// -------------------- Route, Stage & Geography --------------------
+
+// County ↔ Route (one-to-many)
+County.hasMany(Route, { foreignKey: 'county_id', as: 'routes' });
+Route.belongsTo(County, { foreignKey: 'county_id', as: 'county' });
+
+// SACCO ↔ Route (one-to-many)
+SACCO.hasMany(Route, { foreignKey: 'sacco_id', as: 'routes' });
+Route.belongsTo(SACCO, { foreignKey: 'sacco_id', as: 'sacco' });
+
+// Route ↔ Stage (one-to-many)
+Route.hasMany(Stage, { foreignKey: 'route_id', as: 'stages' });
+Stage.belongsTo(Route, { foreignKey: 'route_id', as: 'route' });
+
+// Stage ↔ StageAssignment (one-to-many)
+Stage.hasMany(StageAssignment, { foreignKey: 'stage_id', as: 'assignments' });
+StageAssignment.belongsTo(Stage, { foreignKey: 'stage_id', as: 'stage' });
+
+// User ↔ StageAssignment (one-to-many) - which marshal works which stage
+User.hasMany(StageAssignment, { foreignKey: 'user_id', as: 'stageAssignments' });
+StageAssignment.belongsTo(User, { foreignKey: 'user_id', as: 'marshal' });
+
+// Stage ↔ StageCapacityRule (one-to-many) - max vehicles, queue logic
+Stage.hasMany(StageCapacityRule, { foreignKey: 'stage_id', as: 'capacityRules' });
+StageCapacityRule.belongsTo(Stage, { foreignKey: 'stage_id', as: 'stage' });
+
+// Stage ↔ StageLog (one-to-many) - arrivals, departures, timestamps
+Stage.hasMany(StageLog, { foreignKey: 'stage_id', as: 'logs' });
+StageLog.belongsTo(Stage, { foreignKey: 'stage_id', as: 'stage' });
+
+// User ↔ StageLog (one-to-many) - who logged the event
+User.hasMany(StageLog, { foreignKey: 'logged_by', as: 'stageLogs' });
+StageLog.belongsTo(User, { foreignKey: 'logged_by', as: 'loggedBy' });
 
 // -------------------- Export Models --------------------
 export default {
@@ -104,5 +140,10 @@ export default {
   SaccoUser,
   SaccoSettings,
   SaccoAuditLog,
-  Stage
+  County,
+  Route,
+  Stage,
+  StageAssignment,
+  StageCapacityRule,
+  StageLog
 };
