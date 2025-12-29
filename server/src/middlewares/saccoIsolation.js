@@ -17,12 +17,6 @@ import { Role } from '../models/index.js';
 export const enforceSaccoIsolation = (req, res, next) => {
   const user = req.user || {};
 
-  console.log('=== enforceSaccoIsolation DEBUG ===');
-  console.log('req.user:', JSON.stringify(user, null, 2));
-  console.log('req.params:', req.params);
-  console.log('req.query:', req.query);
-  console.log('req.body keys:', Object.keys(req.body || {}));
-
     const isSuperAdmin =
     user.system_roles?.includes('super_admin') ||
     req.saccoContext?.isSuperAdmin;

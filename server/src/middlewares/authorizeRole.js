@@ -65,8 +65,14 @@ export function requireRole(minRole) {
       }
 
       // Normalize roles from req.user.roles or req.user.role
-      let roleNames = [];
-      if (Array.isArray(req.user.roles) && req.user.roles.length > 0) {
+     let roleNames = [];
+
+      // ✅ PRIMARY SOURCE: system roles
+      if (Array.isArray(req.user.system_roles) && req.user.system_roles.length > 0) {
+        roleNames = req.user.system_roles;
+      }
+      // fallback (legacy / compatibility)
+      else if (Array.isArray(req.user.roles) && req.user.roles.length > 0) {
         roleNames = req.user.roles.map((r) =>
           typeof r === "string" ? r : r?.name || ""
         );

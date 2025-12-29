@@ -163,8 +163,6 @@ export async function createBranch(req, res) {
 
 export async function getBranches(req, res) {
   try {
-    console.log('🔥 getBranches', { user: req.user, params: req.params, query: req.query, saccoMembership: req.saccoMembership });
-
     const saccoId = req.params.saccoId || req.query.sacco_id || req.saccoMembership?.sacco_id;
     const branches = await branchService.getBranchesBySACCO(saccoId);
     res.json(branches);
