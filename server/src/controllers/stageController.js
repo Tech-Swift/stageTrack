@@ -23,17 +23,41 @@ export async function getCounties(req, res) {
 }
 
 // ==================== Route Management ====================
-
 export async function createRoute(req, res) {
   try {
-    const saccoId = req.params.saccoId || req.body.sacco_id || req.saccoMembership?.sacco_id;
-    const userId = req.user.id;
-    const route = await routeService.createRoute(req.body, userId);
-    return res.status(201).json({ message: 'Route created successfully', route });
+    const user = req.user;
+    let sacco_id;
+
+    if (user.is_super_admin) {
+      sacco_id = req.params.saccoId || req.body.sacco_id;
+      if (!sacco_id) {
+        return res.status(400).json({ message: 'sacco_id is required' });
+      }
+    } else {
+      sacco_id = req.saccoMembership?.sacco_id;
+      if (!sacco_id) {
+        return res.status(403).json({ message: 'No SACCO access' });
+      }
+    }
+
+    const route = await routeService.createRoute(
+      {
+        ...req.body,
+        sacco_id, // 🔐 enforced here
+      },
+      user.id
+    );
+
+    return res.status(201).json({
+      message: 'Route created successfully',
+      route,
+    });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }
 }
+
+
 
 export async function getRoutes(req, res) {
   try {
