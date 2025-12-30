@@ -40,13 +40,14 @@ export async function updateUserRoles(req, res) {
 
 export async function listUsers(req, res) {
   try {
-    const saccoId = req.user?.sacco_id; // optional: only show SACCO users
-    const users = await getUsers(saccoId);
+    const users = await getUsers(req.user); // pass the logged-in user
     res.json(users);
   } catch (err) {
+    console.error("listUsers error:", err);
     res.status(500).json({ message: err.message });
   }
 }
+
 
 export async function getUser(req, res) {
   try {

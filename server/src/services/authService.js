@@ -3,6 +3,7 @@ import { Op } from "sequelize";
 import User from "../models/User/User.js";
 import SaccoUser from "../models/Sacco/SaccoUser.js";
 import Role from "../models/User/Role.js";
+import StageAssignment from "../models/Stage/StageAssignment.js";
 import { signToken } from "../utils/jwt.js"; // your JWT helper
 
 /**
@@ -138,27 +139,25 @@ export async function assignRolesToUser(userId, roleIds, assignedBy) {
 /**
  * Get all users (optionally filter by SACCO)
  */
-export async function getUsers(saccoId = null) {
-  const where = saccoId ? { sacco_id: saccoId } : {};
+export async function getUsers() {
   return User.findAll({
-    where,
     include: [
-      { model: Role, as: "roles", through: { attributes: [] }, attributes: ["id", "name", "hierarchy_level"] },
-      "sacco",
-      "stage"
+      {
+        model: Role,
+        as: "roles",
+        through: { attributes: [] },
+        attributes: ["id", "name", "hierarchy_level"],
+        required: false
+      }
     ]
   });
 }
+
 /**
  * Get single user by ID
  */
- export async function getUserById(userId) {
-  return User.findByPk(userId, {
-    include: [
-      { model: Role, as: "roles", through: { attributes: [] }, attributes: ["id", "name", "hierarchy_level"] },
-      "sacco",
-      "stage"
-    ]
-  });
+export async function getUserById(userId) {
+  return User.findByPk(userId); // just return the user record
 }
+
 
