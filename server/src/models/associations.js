@@ -18,6 +18,12 @@ import Stage from './Stage/stage.model.js';
 import StageAssignment from './Stage/StageAssignment.js';
 import StageCapacityRule from './Stage/CapacityRule.js';
 import StageLog from './Stage/Stagelog.js';
+// Vehicle models
+import Vehicle from './Vehicle/Vehicle.js';
+import VehicleOwner from './Vehicle/VehicleOwner.js';
+import VehicleOwnerLink from './Vehicle/VehicleOwnerLink.js';
+import VehicleDocument from './Vehicle/VehicleDocument.js';
+import VehicleStatusHistory from './Vehicle/VehicleStatusHistory.js';
 
 // -------------------- Role & Permission --------------------
 
@@ -127,6 +133,50 @@ StageLog.belongsTo(Stage, { foreignKey: 'stage_id', as: 'stage' });
 User.hasMany(StageLog, { foreignKey: 'logged_by', as: 'stageLogs' });
 StageLog.belongsTo(User, { foreignKey: 'logged_by', as: 'loggedBy' });
 
+// -------------------- Vehicle & Ownership --------------------
+
+// SACCO ↔ Vehicle (one-to-many)
+SACCO.hasMany(Vehicle, { foreignKey: 'sacco_id', as: 'vehicles' });
+Vehicle.belongsTo(SACCO, { foreignKey: 'sacco_id', as: 'sacco' });
+
+// Route ↔ Vehicle (one-to-many)
+Route.hasMany(Vehicle, { foreignKey: 'route_id', as: 'vehicles' });
+Vehicle.belongsTo(Route, { foreignKey: 'route_id', as: 'route' });
+
+// Vehicle ↔ VehicleOwner (many-to-many through VehicleOwnerLink)
+Vehicle.belongsToMany(VehicleOwner, {
+  through: VehicleOwnerLink,
+  foreignKey: 'vehicle_id',
+  otherKey: 'owner_id',
+  as: 'owners'
+});
+VehicleOwner.belongsToMany(Vehicle, {
+  through: VehicleOwnerLink,
+  foreignKey: 'owner_id',
+  otherKey: 'vehicle_id',
+  as: 'vehicles'
+});
+
+// VehicleOwnerLink associations
+VehicleOwnerLink.belongsTo(Vehicle, { foreignKey: 'vehicle_id', as: 'vehicle' });
+VehicleOwnerLink.belongsTo(VehicleOwner, { foreignKey: 'owner_id', as: 'owner' });
+
+// Vehicle ↔ VehicleDocument (one-to-many)
+Vehicle.hasMany(VehicleDocument, { foreignKey: 'vehicle_id', as: 'documents' });
+VehicleDocument.belongsTo(Vehicle, { foreignKey: 'vehicle_id', as: 'vehicle' });
+
+// User ↔ VehicleDocument (one-to-many) - who verified the document
+User.hasMany(VehicleDocument, { foreignKey: 'verified_by', as: 'verifiedDocuments' });
+VehicleDocument.belongsTo(User, { foreignKey: 'verified_by', as: 'verifiedBy' });
+
+// Vehicle ↔ VehicleStatusHistory (one-to-many)
+Vehicle.hasMany(VehicleStatusHistory, { foreignKey: 'vehicle_id', as: 'statusHistory' });
+VehicleStatusHistory.belongsTo(Vehicle, { foreignKey: 'vehicle_id', as: 'vehicle' });
+
+// User ↔ VehicleStatusHistory (one-to-many) - who changed the status
+User.hasMany(VehicleStatusHistory, { foreignKey: 'changed_by', as: 'vehicleStatusChanges' });
+VehicleStatusHistory.belongsTo(User, { foreignKey: 'changed_by', as: 'changedBy' });
+
 // -------------------- Export Models --------------------
 export default {
   User,
@@ -145,5 +195,10 @@ export default {
   Stage,
   StageAssignment,
   StageCapacityRule,
-  StageLog
+  StageLog,
+  Vehicle,
+  VehicleOwner,
+  VehicleOwnerLink,
+  VehicleDocument,
+  VehicleStatusHistory
 };

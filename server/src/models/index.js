@@ -12,6 +12,12 @@ import Stage from './Stage/stage.model.js';
 import StageAssignment from './Stage/StageAssignment.js';
 import StageCapacityRule from './Stage/CapacityRule.js';
 import StageLog from './Stage/Stagelog.js';
+// Vehicle models
+import Vehicle from './Vehicle/Vehicle.js';
+import VehicleOwner from './Vehicle/VehicleOwner.js';
+import VehicleOwnerLink from './Vehicle/VehicleOwnerLink.js';
+import VehicleDocument from './Vehicle/VehicleDocument.js';
+import VehicleStatusHistory from './Vehicle/VehicleStatusHistory.js';
 import Role from './User/Role.js';
 import Permission from './User/Permission.js';
 import UserRole from './User/user_role.js';
@@ -37,6 +43,11 @@ export {
   StageAssignment,
   StageCapacityRule,
   StageLog,
+  Vehicle,
+  VehicleOwner,
+  VehicleOwnerLink,
+  VehicleDocument,
+  VehicleStatusHistory,
   Role,
   Permission,
   UserRole,
@@ -58,6 +69,11 @@ export default {
   StageAssignment,
   StageCapacityRule,
   StageLog,
+  Vehicle,
+  VehicleOwner,
+  VehicleOwnerLink,
+  VehicleDocument,
+  VehicleStatusHistory,
   Role,
   Permission,
   UserRole,
