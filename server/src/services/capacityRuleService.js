@@ -20,74 +20,87 @@ import { getStageById } from './stageService.js';
  * @param {string} userId - User ID creating the rule
  */
 export async function createCapacityRule(data, saccoId, userId) {
-  const {
+  let {
     stage_id,
     max_vehicles,
-    queue_strategy = 'FIFO',
-    overflow_action = 'HOLD',
+    queue_strategy = "FIFO",
+    overflow_action = "HOLD",
     effective_from,
-    effective_to = null
+    effective_to = null,
+    rule_type = "FIFO_ONLY",
   } = data;
 
-  // Validate required fields
-  if (!stage_id || !max_vehicles || !effective_from) {
-    throw new Error('Stage ID, max vehicles, and effective from date are required');
+  if (!stage_id || !effective_from) {
+    throw new Error('Stage ID and effective_from date are required');
   }
 
-  // Validate queue_strategy
-  const validStrategies = ['FIFO', 'PRIORITY', 'TIME_BASED'];
-  if (!validStrategies.includes(queue_strategy)) {
-    throw new Error(`Queue strategy must be one of: ${validStrategies.join(', ')}`);
-  }
+  // Convert dates
+  effective_from = new Date(effective_from);
+  effective_to = effective_to ? new Date(effective_to) : null;
 
-  // Validate overflow_action
-  const validActions = ['HOLD', 'REDIRECT', 'DENY'];
-  if (!validActions.includes(overflow_action)) {
-    throw new Error(`Overflow action must be one of: ${validActions.join(', ')}`);
-  }
+  // Validate enums
+  const ALLOWED_QUEUE = ['FIFO', 'PRIORITY', 'TIME_BASED'];
+  const ALLOWED_OVERFLOW = ['HOLD', 'REDIRECT', 'DENY'];
+  const ALLOWED_RULE_TYPES = ['FIFO_ONLY', 'CAPACITY_LIMITED'];
 
-  // Verify stage belongs to SACCO
+  if (!ALLOWED_QUEUE.includes(queue_strategy)) throw new Error(`Invalid queue_strategy`);
+  if (!ALLOWED_OVERFLOW.includes(overflow_action)) throw new Error(`Invalid overflow_action`);
+  if (!ALLOWED_RULE_TYPES.includes(rule_type)) throw new Error(`Invalid rule_type`);
+
+  // Verify stage exists
   await getStageById(stage_id, saccoId);
 
-  // Check for overlapping rules
+  // 1️⃣ End any previous active rule that overlaps or is currently active
+  await StageCapacityRule.update(
+    { effective_to: effective_from },
+    {
+      where: {
+        stage_id,
+        effective_to: null,
+        effective_from: { [Op.lte]: effective_from }
+      }
+    }
+  );
+
+  // 2️⃣ Check for overlapping rules with future periods
   const overlapping = await StageCapacityRule.findOne({
     where: {
       stage_id,
-      effective_from: { [Op.lte]: effective_to || new Date('2099-12-31') },
+      effective_from: { [Op.lt]: effective_to || new Date('2099-12-31') },
       [Op.or]: [
         { effective_to: null },
-        { effective_to: { [Op.gte]: effective_from } }
+        { effective_to: { [Op.gt]: effective_from } }
       ]
     }
   });
 
   if (overlapping) {
-    throw new Error('Overlapping capacity rule exists for this stage');
+    throw new Error('Cannot create rule: overlapping time frame with an existing rule');
   }
 
-  // Create rule
+  // 3️⃣ Create new rule
   const rule = await StageCapacityRule.create({
     stage_id,
     max_vehicles,
     queue_strategy,
     overflow_action,
-    effective_from: new Date(effective_from),
-    effective_to: effective_to ? new Date(effective_to) : null
+    effective_from,
+    effective_to,
+    rule_type
   });
 
-  // Audit log
+  // 4️⃣ Audit log
   await createAuditLog({
     sacco_id: saccoId,
     user_id: userId,
-    action: 'create_capacity_rule',
-    entity: 'stage_capacity_rule',
+    action: "create_capacity_rule",
+    entity: "stage_capacity_rule",
     entity_id: rule.id,
-    metadata: { stage_id, max_vehicles, queue_strategy, overflow_action }
+    metadata: { stage_id, max_vehicles, queue_strategy, overflow_action, effective_from, effective_to, rule_type }
   });
 
   return rule;
 }
-
 /**
  * Get current capacity rule for a stage
  * @param {string} stageId - Stage ID

@@ -7,6 +7,7 @@ import * as stageService from '../services/stageService.js';
 import * as stageAssignmentService from '../services/stageAssignmentService.js';
 import * as capacityRuleService from '../services/capacityRuleService.js';
 import * as stageLogService from '../services/stageLogService.js';
+import { ValidationError } from 'sequelize';
 
 // ==================== County Management ====================
 
@@ -278,10 +279,30 @@ export async function createCapacityRule(req, res) {
   try {
     const saccoId = req.params.saccoId || req.body.sacco_id || req.saccoMembership?.sacco_id;
     const userId = req.user.id;
+
     const rule = await capacityRuleService.createCapacityRule(req.body, saccoId, userId);
-    return res.status(201).json({ message: 'Capacity rule created successfully', rule });
+
+    return res.status(201).json({
+      message: "Capacity rule created successfully",
+      rule
+    });
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    // Handle Sequelize validation errors
+    if (error instanceof ValidationError) {
+      const messages = error.errors.map((e) => e.message);
+      return res.status(400).json({
+        message: "Validation failed",
+        errors: messages
+      });
+    }
+
+    // Handle custom errors thrown in your service
+    if (error.message) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    // Fallback for unexpected errors
+    return res.status(500).json({ message: "Internal server error" });
   }
 }
 

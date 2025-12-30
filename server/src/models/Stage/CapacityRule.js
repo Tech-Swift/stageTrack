@@ -15,7 +15,7 @@ const StageCapacityRule = sequelize.define(
     },
     max_vehicles: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     queue_strategy: {
       type: DataTypes.ENUM('FIFO', 'PRIORITY', 'TIME_BASED'),
@@ -24,6 +24,11 @@ const StageCapacityRule = sequelize.define(
     overflow_action: {
       type: DataTypes.ENUM('HOLD', 'REDIRECT', 'DENY'),
       defaultValue: 'HOLD',
+    },
+    rule_type: {
+      type: DataTypes.ENUM('FIFO_ONLY', 'CAPACITY_LIMITED'),
+      allowNull: false,
+      defaultValue: 'FIFO_ONLY',
     },
     effective_from: {
       type: DataTypes.DATE,
@@ -40,7 +45,7 @@ const StageCapacityRule = sequelize.define(
     indexes: [
       {
         name: 'idx_capacity_rules_stage_id',
-        fields: ['stage_id'],
+        fields: ['stage_id'], // NOT unique anymore
       },
       {
         name: 'idx_capacity_rules_effective_dates',
@@ -53,5 +58,6 @@ const StageCapacityRule = sequelize.define(
     ],
   }
 );
+
 
 export default StageCapacityRule;
