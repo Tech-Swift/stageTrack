@@ -112,7 +112,7 @@ Stage.hasMany(StageAssignment, { foreignKey: 'stage_id', as: 'assignments' });
 StageAssignment.belongsTo(Stage, { foreignKey: 'stage_id', as: 'stage' });
 
 // User ↔ StageAssignment (one-to-many) - which marshal works which stage
-User.hasMany(StageAssignment, { foreignKey: 'user_id', as: 'stageAssignments' });
+User.hasMany(StageAssignment, { foreignKey: 'user_id', as: 'assignments' });
 StageAssignment.belongsTo(User, { foreignKey: 'user_id', as: 'marshal' });
 
 // Stage ↔ StageCapacityRule (one-to-many) - max vehicles, queue logic

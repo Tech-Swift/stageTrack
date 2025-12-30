@@ -106,7 +106,7 @@ export async function getStageAssignments(stageId, saccoId, options = {}) {
     include.push({
       model: User,
       as: 'marshal',
-      attributes: ['id', 'username', 'email', 'first_name', 'last_name']
+      attributes: ['id', 'full_name', 'email', 'phone' ]
     });
   }
 
@@ -272,7 +272,7 @@ export async function getActiveMarshals(stageId, saccoId) {
       {
         model: User,
         as: 'marshal',
-        attributes: ['id', 'username', 'email', 'first_name', 'last_name']
+        attributes: ['id', 'full_name', 'email', 'phone']
       }
     ],
     order: [['shift_start', 'ASC']]
