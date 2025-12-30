@@ -157,7 +157,17 @@ export async function getUsers() {
  * Get single user by ID
  */
 export async function getUserById(userId) {
-  return User.findByPk(userId); // just return the user record
+  return User.findByPk(userId, {
+    include: [
+      {
+        model : Role,
+        as: "roles",
+        through: { attributes: []},
+        attributes: ["id", "name", "hierarchy_level"],
+        required: false
+      }
+    ]
+  }); // just return the user record
 }
 
 
