@@ -128,8 +128,10 @@ export async function verifySaccoAccess(req, res, next) {
     }
 
     // 2️⃣ If no SACCO specified, allow access (controllers can apply filters)
-    if (!requestedSaccoId) {
-      return next();
+        if (!requestedSaccoId) {
+      return res.status(400).json({
+        message: 'SACCO context is required for this operation'
+      });
     }
 
     // 3️⃣ Validate UUID

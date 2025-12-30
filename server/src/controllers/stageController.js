@@ -26,24 +26,26 @@ export async function getCounties(req, res) {
 export async function createRoute(req, res) {
   try {
     const user = req.user;
-    let sacco_id;
 
-    if (user.is_super_admin) {
-      sacco_id = req.params.saccoId || req.body.sacco_id;
-      if (!sacco_id) {
-        return res.status(400).json({ message: 'sacco_id is required' });
-      }
-    } else {
-      sacco_id = req.saccoMembership?.sacco_id;
-      if (!sacco_id) {
-        return res.status(403).json({ message: 'No SACCO access' });
-      }
+    const isSuperAdmin =
+      req.saccoContext?.isSuperAdmin ||
+      user?.system_roles?.includes('super_admin');
+
+    const sacco_id =
+      req.params.saccoId ||
+      req.body.sacco_id ||
+      req.saccoMembership?.sacco_id ||
+      user?.sacco_id;
+
+    if (!sacco_id) {
+      return res.status(403).json({ message: 'No SACCO access' });
     }
+
 
     const route = await routeService.createRoute(
       {
         ...req.body,
-        sacco_id, // 🔐 enforced here
+        sacco_id, 
       },
       user.id
     );
