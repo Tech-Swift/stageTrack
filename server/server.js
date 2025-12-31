@@ -9,6 +9,7 @@ import authRoutes from './src/routes/authRoutes.js';
 import roleRoutes from "./src/routes/roleRoutes.js";
 import saccoRoutes from "./src/routes/saccoRoutes.js";
 import stageRoutes from "./src/routes/stageRoutes.js";
+import vehicleRoutes from "./src/routes/vehicleRoutes.js";
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use('/api/auth', authRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/saccos", saccoRoutes);
 app.use("/api/stages", stageRoutes);
+app.use("/api/vehicles", vehicleRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
