@@ -5,6 +5,7 @@
 .env.local
 .env.production
 .env.development
+.clinic*
 
 # =========================
 # NODE MODULES

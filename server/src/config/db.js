@@ -23,7 +23,7 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
     freezeTableName: true, // model name = table name
     timestamps: false // we handle timestamps manually in models
   }
-});
+});   
 
 const connectDB = async () => {
   try {
