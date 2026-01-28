@@ -3,20 +3,37 @@ import * as vehicleOwnerService from '../services/vehicleOwnerService.js';
 import * as vehicleDocumentService from '../services/vehicleDocumentService.js';
 import * as vehicleStatusHistoryService from '../services/vehicleStatusHistoryService.js';
 
+
 export async function createVehicle(req, res) {
   try {
-    const userId = req.user.id;
+    const user = req.user;
+    const isSuperAdmin = userRoles.includes('super_admin');
 
-    // sacco_id comes from token unless super_admin passes explicitly
-    const saccoId = req.user.sacco_id || req.body.sacco_id;
-
-    if (!saccoId) {
-      return res.status(403).json({ message: 'SACCO context required' });
+    // Only allow super_admin or SACCO admin
+    if (!userRoles.some(r => ['super_admin', 'admin'].includes(r))) {
+      return res.status(403).json({
+        message: 'Insufficient role privileges',
+        userHighestRole: userRoles[0] || 'none',
+        requiredRole: 'super_admin or admin'
+      });
     }
 
+    // Declare saccoId once
+    let saccoId;
+
+    if (isSuperAdmin) {
+      saccoId = req.body.sacco_id; // must be provided
+      if (!saccoId) {
+        return res.status(400).json({ message: 'SACCO ID is required for super admin' });
+      }
+    } else {
+      saccoId = user.sacco_id; // admin uses token
+    }
+
+    // Call service
     const vehicle = await vehicleService.createVehicle(
       { ...req.body, sacco_id: saccoId },
-      userId
+      user
     );
 
     return res.status(201).json({
@@ -24,9 +41,12 @@ export async function createVehicle(req, res) {
       data: vehicle
     });
   } catch (error) {
+    console.error('CREATE VEHICLE ERROR:', error);
     return res.status(400).json({ message: error.message });
   }
 }
+
+
 
 /**
  * Get all vehicles for a SACCO
@@ -34,23 +54,18 @@ export async function createVehicle(req, res) {
  */
 export async function getVehicles(req, res) {
   try {
-    const saccoId = req.user.sacco_id;
+    const vehicles = await vehicleService.getVehicles(req.query, req.user);
 
-    if (!saccoId && !req.user.is_super_admin) {
-      return res.status(403).json({ message: 'SACCO context required' });
-    }
-
-    const vehicles = await vehicleService.getVehiclesBySACCO(
-      saccoId,
-      {
-        route_id: req.query.route_id,
-        status: req.query.status
-      }
-    );
-
-    return res.status(200).json({ data: vehicles });
+    res.status(200).json({
+      success: true,
+      count: vehicles.length,
+      data: vehicles
+    });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    res.status(403).json({
+      success: false,
+      message: error.message
+    });
   }
 }
 

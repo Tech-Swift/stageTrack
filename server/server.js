@@ -60,18 +60,19 @@ app.listen(PORT, () => {
 // Async DB connection + model sync (non-blocking)
 (async () => {
   try {
+    console.log('🔄 Connecting to database...');
     await connectDB();
+    console.log('✅ PostgreSQL connected successfully via Sequelize.');
+    console.log('📊 Database: stagetrack');
     console.log('✅ Database connected');
 
-    // Optional: only sync essential models immediately
+    console.log('🔄 Syncing models...');
     await sequelize.sync({ alter: true });
     console.log('✅ Database models synchronized');
 
-    // You could also preload models selectively if needed:
-    // await sequelize.model('User').sync();
-    // await sequelize.model('Role').sync();
   } catch (error) {
     console.error('❌ DB initialization error:', error.message);
+    console.error('Stack:', error.stack);
     // Do NOT exit; server is already running
   }
 })();

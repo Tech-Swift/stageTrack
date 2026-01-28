@@ -17,38 +17,48 @@ import { Role } from '../models/index.js';
 export const enforceSaccoIsolation = (req, res, next) => {
   const user = req.user || {};
 
-    const isSuperAdmin =
+  // Determine if super admin
+  const isSuperAdmin =
     user.system_roles?.includes('super_admin') ||
     req.saccoContext?.isSuperAdmin;
 
   if (isSuperAdmin) {
     console.log('Super admin bypassing SACCO isolation');
-    return next(); // ⬅️ NOTHING below should run
+    return next(); // Super admins bypass SACCO isolation
   }
 
+  // Normalize SACCO ID from token
+  const userSaccoId = user.sacco_id || user.saccoId;
 
-    if (!user.sacco_role || !user.sacco_id) {
+  // Ensure the user has a SACCO role and SACCO ID
+  if (!user.sacco_role || !userSaccoId) {
     console.log('Blocking: user has no SACCO role or SACCO ID');
     return res.status(403).json({ message: 'User has no SACCO role or SACCO ID' });
   }
 
-    const saccoIdFromRequest =
+  // Determine SACCO from request (params, body, query) or fallback to token
+  const saccoIdFromRequest =
     req.params?.saccoId ||
     req.params?.sacco_id ||
     req.body?.sacco_id ||
-    req.query?.sacco_id;
+    req.query?.sacco_id ||
+    userSaccoId; // ✅ fallback to token SACCO
 
-   if (!saccoIdFromRequest) {
-    return res.status(400).json({ message: 'SACCO ID is required' });
-  }
-
-  if (user.sacco_id !== saccoIdFromRequest) {
+  // Check if the user is trying to access a SACCO they don’t belong to
+  if (userSaccoId !== saccoIdFromRequest) {
     console.log('Access denied: user.sacco_id != requested saccoId');
     return res.status(403).json({ message: 'Access denied for this SACCO' });
   }
 
+  // Attach SACCO context for downstream use
+  req.saccoContext = {
+    saccoId: saccoIdFromRequest,
+    isSuperAdmin
+  };
+
   next();
 };
+
 
   
 /**

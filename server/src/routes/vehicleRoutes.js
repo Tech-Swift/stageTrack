@@ -12,10 +12,10 @@ const router = express.Router();
 router.post(
   '/',
   authenticate,
-  requireRole('super_admin', 'sacco_admin'),
+  requireRole(['super_admin', 'admin']),
   enforceSaccoIsolation,
   vehicleController.createVehicle
-);
+)
 
 router.get(
   '/',
