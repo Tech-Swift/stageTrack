@@ -102,27 +102,34 @@ export async function getVehicles(filter = {}, user) {
 
   const where = {};
 
-  // Determine user's global/system role
-  const isSuperAdmin = user.system_roles?.includes('super_admin');
-  const isAdmin = user.system_roles?.includes('admin');
+  const isSuperAdmin = user.system_roles?.includes("super_admin");
+  const isAdmin = user.system_roles?.includes("admin");
 
-  // 🟢 SUPER ADMIN — full access
+  // 🟢 SUPER ADMIN — full or filtered access
   if (isSuperAdmin) {
     if (querySaccoId) {
-      where.sacco_id = querySaccoId; // filter by sacco if requested
+      where.sacco_id = querySaccoId;
     }
-  }
-  // 🔵 NORMAL ADMIN — apply SACCO isolation if they belong to a SACCO
-  else if (isAdmin) {
-    if (user.sacco_id) {
-      where.sacco_id = user.sacco_id; // restrict to their SACCO
-    } else if (querySaccoId) {
-      where.sacco_id = querySaccoId; // optional global view if no SACCO assigned
-    }
-    // else: no SACCO assigned, no filter → allow all? depends on policy
   }
 
-  // Additional optional filters
+  // 🔵 SACCO ADMIN — STRICT TENANT ISOLATION
+  else if (isAdmin) {
+    if (!user.sacco_id) {
+      throw new Error("Admin account is not assigned to any SACCO");
+    }
+
+    // Ignore any sacco_id from query — enforce tenant boundary
+    where.sacco_id = user.sacco_id;
+  }
+
+  // 🟡 Other roles (manager, director, etc.)
+  else if (user.sacco_id) {
+    where.sacco_id = user.sacco_id;
+  } else {
+    throw new Error("User is not assigned to a SACCO");
+  }
+
+  // Optional filters
   if (route_id) where.route_id = route_id;
   if (status) where.status = status;
 
@@ -131,21 +138,22 @@ export async function getVehicles(filter = {}, user) {
     include: [
       {
         model: SACCO,
-        as: 'sacco',
-        attributes: ['id', 'name', 'status']
+        as: "sacco",
+        attributes: ["id", "name", "status"],
       },
       {
         model: Route,
-        as: 'route',
-        attributes: ['id', 'route_code', 'origin', 'destination'],
-        required: false
-      }
+        as: "route",
+        attributes: ["id", "route_code", "origin", "destination"],
+        required: false,
+      },
     ],
-    order: [['created_at', 'DESC']]
+    order: [["created_at", "DESC"]],
   });
 
   return vehicles;
 }
+
 
 
 /**
@@ -153,12 +161,16 @@ export async function getVehicles(filter = {}, user) {
  * @param {string} vehicleId - Vehicle ID
  * @param {string} saccoId - SACCO ID (for multi-tenancy check)
  */
-export async function getVehicleById(vehicleId, saccoId) {
+export async function getVehicleById(vehicleId, saccoId = null) {
+  const whereClause = { id: vehicleId };
+
+  // Only enforce SACCO isolation if saccoId is provided
+  if (saccoId) {
+    whereClause.sacco_id = saccoId;
+  }
+
   const vehicle = await Vehicle.findOne({
-    where: {
-      id: vehicleId,
-      sacco_id: saccoId // Multi-tenancy isolation
-    },
+    where: whereClause,
     include: [
       {
         model: SACCO,
@@ -180,6 +192,7 @@ export async function getVehicleById(vehicleId, saccoId) {
 
   return vehicle;
 }
+
 
 /**
  * Update a vehicle

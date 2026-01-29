@@ -63,16 +63,21 @@ export async function getVehicles(req, res) {
  */
 export async function getVehicleById(req, res) {
   try {
-    const { id } = req.params;
-    const saccoId = req.user.sacco_id;
+    const user = req.user;
+    const vehicleId = req.params.id;
 
-    const vehicle = await vehicleService.getVehicleById(id, saccoId);
+    const isSuperAdmin = user.system_roles?.includes('super_admin');
 
-    return res.status(200).json({ data: vehicle });
+    const saccoId = isSuperAdmin ? null : user.sacco_id;
+
+    const vehicle = await vehicleService.getVehicleById(vehicleId, saccoId);
+
+    return res.json(vehicle);
   } catch (error) {
     return res.status(404).json({ message: error.message });
   }
 }
+
 
 /**
  * Update a vehicle
