@@ -35,45 +35,32 @@ router.get(
  routeController.getRoutes
 );
 
-router.get(
-  '/:saccoId/routes',
-  enforceSaccoIsolation,
-  verifySaccoAccess,
- routeController.getRoutes
-);
-
 // Get route by ID
 router.get(
   '/:id',
-  enforceSaccoIsolation,
-  verifySaccoAccess,
- routeController.getRouteById
+  requireRole('admin'),
+  routeController.getRouteById
 );
 
 // Update route
 router.put(
-  '/:saccoId/routes/:routeId',
-  enforceSaccoIsolation,
-  verifySaccoAccess,
+  '/:id',
   requireRole('admin'),
  routeController.updateRoute
 );
 
 // Delete route
 router.delete(
-  '/:saccoId/routes/:routeId',
-  enforceSaccoIsolation,
-  verifySaccoAccess,
+  '/:id',
   requireRole('admin'),
- routeController.deleteRoute
+  routeController.deleteRoute
 );
 
 // Route stats
 router.get(
-  '/:saccoId/routes/:routeId/stats',
-  enforceSaccoIsolation,
-  verifySaccoAccess,
- routeController.getRouteStats
+  '/:id/stats',
+  requireRole('admin'),
+  routeController.getRouteStats
 );
 
 // -------------------- STAGES --------------------

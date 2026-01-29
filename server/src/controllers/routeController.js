@@ -86,38 +86,47 @@ export async function getRouteById(req, res) {
 
 export async function updateRoute(req, res) {
   try {
-    const { routeId } = req.params;
-    const saccoId = req.params.saccoId || req.saccoMembership?.sacco_id;
-    const userId = req.user.id;
-    const route = await routeService.updateRoute(routeId, req.body, saccoId, userId);
-    return res.json({ message: 'Route updated successfully', route });
+    const route = await routeService.updateRoute(
+      req.params.id,
+      req.body,
+      req.user
+    );
+
+    res.json({ success: true, data: route });
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    console.error('UPDATE ROUTE ERROR:', error);
+    res.status(400).json({ success: false, message: error.message });
   }
 }
 
 export async function deleteRoute(req, res) {
   try {
-    const { routeId } = req.params;
-    const saccoId = req.params.saccoId || req.saccoMembership?.sacco_id;
-    const userId = req.user.id;
-    const result = await routeService.deleteRoute(routeId, saccoId, userId);
-    return res.json(result);
+    await routeService.deleteRoute(req.params.id, req.user);
+
+    res.json({
+      success: true,
+      message: 'Route deleted successfully'
+    });
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    console.error('DELETE ROUTE ERROR:', error);
+    res.status(400).json({ success: false, message: error.message });
   }
 }
 
-export async function getRouteStats(req, res) {
-  try {
-    const { routeId } = req.params;
-    const saccoId = req.params.saccoId || req.saccoMembership?.sacco_id;
-    const stats = await routeService.getRouteStats(routeId, saccoId);
-    return res.json(stats);
-  } catch (error) {
-    return res.status(404).json({ message: error.message });
+  export async function getRouteStats(req, res) {
+    try {
+      const stats = await routeService.getRouteStats(req.params.id, req.user);
+
+      return res.status(200).json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      console.error('GET ROUTE STATS ERROR:', error);
+      return res.status(403).json({ success: false, message: error.message });
+    }
   }
-}
+
 
 // ==================== Stage Management ====================
 
