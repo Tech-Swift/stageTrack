@@ -25,6 +25,11 @@ import VehicleOwnerLink from './Vehicle/VehicleOwnerLink.js';
 import VehicleDocument from './Vehicle/VehicleDocument.js';
 import VehicleStatusHistory from './Vehicle/VehicleStatusHistory.js';
 
+// Trip model
+import Trip from './Trip/Trip.js';
+import TripLog from './Trip/tripLog.model.js';
+
+
 // -------------------- Role & Permission --------------------
 
 // Role <-> Permission (Many-to-Many)
@@ -177,6 +182,13 @@ VehicleStatusHistory.belongsTo(Vehicle, { foreignKey: 'vehicle_id', as: 'vehicle
 User.hasMany(VehicleStatusHistory, { foreignKey: 'changed_by', as: 'vehicleStatusChanges' });
 VehicleStatusHistory.belongsTo(User, { foreignKey: 'changed_by', as: 'changedBy' });
 
+// -------------------- Trip Associations --------------------
+TripLog.belongsTo(Vehicle, { foreignKey: "vehicle_id" });
+TripLog.belongsTo(Route, { foreignKey: "route_id" });
+TripLog.belongsTo(Stage, { as: "departureStage", foreignKey: "departure_stage_id" });
+TripLog.belongsTo(Stage, { as: "arrivalStage", foreignKey: "arrival_stage_id" });
+TripLog.belongsTo(CrewAssignment, { foreignKey: "crew_assignment_id" });
+
 // -------------------- Export Models --------------------
 export default {
   User,
@@ -200,5 +212,6 @@ export default {
   VehicleOwner,
   VehicleOwnerLink,
   VehicleDocument,
-  VehicleStatusHistory
+  VehicleStatusHistory,
+  TripLog
 };
