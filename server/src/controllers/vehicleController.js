@@ -4,49 +4,37 @@ import * as vehicleDocumentService from '../services/vehicleDocumentService.js';
 import * as vehicleStatusHistoryService from '../services/vehicleStatusHistoryService.js';
 
 
+// Creating a vehicle 
 export async function createVehicle(req, res) {
   try {
     const user = req.user;
-    const isSuperAdmin = userRoles.includes('super_admin');
+    const isSuperAdmin = user.system_roles?.includes("super_admin");
 
-    // Only allow super_admin or SACCO admin
-    if (!userRoles.some(r => ['super_admin', 'admin'].includes(r))) {
-      return res.status(403).json({
-        message: 'Insufficient role privileges',
-        userHighestRole: userRoles[0] || 'none',
-        requiredRole: 'super_admin or admin'
-      });
-    }
-
-    // Declare saccoId once
     let saccoId;
 
     if (isSuperAdmin) {
-      saccoId = req.body.sacco_id; // must be provided
+      saccoId = req.body.sacco_id;
       if (!saccoId) {
-        return res.status(400).json({ message: 'SACCO ID is required for super admin' });
+        return res.status(400).json({ message: "SACCO ID is required for super admin" });
       }
     } else {
-      saccoId = user.sacco_id; // admin uses token
+      saccoId = user.sacco_id;
     }
 
-    // Call service
     const vehicle = await vehicleService.createVehicle(
       { ...req.body, sacco_id: saccoId },
       user
     );
 
     return res.status(201).json({
-      message: 'Vehicle created successfully',
-      data: vehicle
+      message: "Vehicle created successfully",
+      data: vehicle,
     });
   } catch (error) {
-    console.error('CREATE VEHICLE ERROR:', error);
+    console.error("CREATE VEHICLE ERROR:", error);
     return res.status(400).json({ message: error.message });
   }
 }
-
-
 
 /**
  * Get all vehicles for a SACCO

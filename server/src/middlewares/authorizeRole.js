@@ -50,7 +50,7 @@ function highestRole(roleNames = []) {
  * Middleware: requireRole
  * @param {string} minRole - minimum role required (e.g., "admin")
  */
-export function requireRole(minRole) {
+export function requireRole(minRoles) {
   return (req, res, next) => {
     try {
       if (!req.user) {
@@ -58,21 +58,21 @@ export function requireRole(minRole) {
         return res.status(401).json({ message: "Unauthenticated" });
       }
 
-      // ✅ Super admin bypass
+      // Always treat as array
+      const requiredRoles = Array.isArray(minRoles) ? minRoles : [minRoles];
+
+      // Super admin bypass
       if (req.user.system_roles?.includes("super_admin")) {
         console.log(`requireRole: Super admin bypass for user ${req.user.id}`);
         return next();
       }
 
-      // Normalize roles from req.user.roles or req.user.role
-     let roleNames = [];
+      // Collect user roles
+      let roleNames = [];
 
-      // ✅ PRIMARY SOURCE: system roles
       if (Array.isArray(req.user.system_roles) && req.user.system_roles.length > 0) {
         roleNames = req.user.system_roles;
-      }
-      // fallback (legacy / compatibility)
-      else if (Array.isArray(req.user.roles) && req.user.roles.length > 0) {
+      } else if (Array.isArray(req.user.roles) && req.user.roles.length > 0) {
         roleNames = req.user.roles.map((r) =>
           typeof r === "string" ? r : r?.name || ""
         );
@@ -82,32 +82,44 @@ export function requireRole(minRole) {
 
       console.log(`requireRole: user ${req.user.id} roles detected`, roleNames);
 
-      const top = highestRole(roleNames);
-      console.log(`requireRole: highest role determined for user ${req.user.id}:`, top);
+      const userTopRole = highestRole(roleNames);
+      console.log(`requireRole: highest role determined for user ${req.user.id}:`, userTopRole);
 
-      if (!top) {
+      if (!userTopRole) {
         return res.status(403).json({
-          message: "No roles assigned",
+          message: "No valid roles assigned",
           rolesFound: roleNames,
-          userId: req.user.id,
         });
       }
 
-      if (!ROLE_ORDER.includes(minRole)) {
-        return res
-          .status(500)
-          .json({ message: `Server misconfig: unknown minRole '${minRole}'` });
+      const userRank = ROLE_ORDER.indexOf(userTopRole);
+
+      // Normalize and validate required roles
+      const normalizedRequired = requiredRoles
+        .map(normalizeRoleName)
+        .filter((r) => r && ROLE_ORDER.includes(r));
+
+      if (normalizedRequired.length === 0) {
+        return res.status(500).json({
+          message: `Server misconfig: none of the required roles are valid`,
+          provided: requiredRoles,
+        });
       }
 
-      if (ROLE_ORDER.indexOf(top) < ROLE_ORDER.indexOf(minRole)) {
+      // Find the LOWEST rank requirement among allowed roles
+      const minRequiredRank = Math.min(
+        ...normalizedRequired.map((r) => ROLE_ORDER.indexOf(r))
+      );
+
+      if (userRank < minRequiredRank) {
         return res.status(403).json({
           message: "Insufficient role privileges",
-          userHighestRole: top,
-          requiredRole: minRole,
+          userHighestRole: userTopRole,
+          requiredAtLeastOneOf: normalizedRequired,
         });
       }
 
-      req.user.highestRole = top;
+      req.user.highestRole = userTopRole;
       console.log(`requireRole: user ${req.user.id} passed role check`);
 
       next();
@@ -117,4 +129,5 @@ export function requireRole(minRole) {
     }
   };
 }
+
 

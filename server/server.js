@@ -58,21 +58,24 @@ app.listen(PORT, () => {
 });
 
 // Async DB connection + model sync (non-blocking)
-(async () => {
+async function startServer() {
   try {
     console.log('🔄 Connecting to database...');
     await connectDB();
     console.log('✅ PostgreSQL connected successfully via Sequelize.');
-    console.log('📊 Database: stagetrack');
-    console.log('✅ Database connected');
 
     console.log('🔄 Syncing models...');
     await sequelize.sync({ alter: true });
     console.log('✅ Database models synchronized');
 
-  } catch (error) {
-    console.error('❌ DB initialization error:', error.message);
-    console.error('Stack:', error.stack);
-    // Do NOT exit; server is already running
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`Health check: http://localhost:${PORT}/health`);
+    });
+  } catch (err) {
+    console.error('❌ Server startup error:', err.message);
+    process.exit(1); // exit only if you really cannot connect
   }
-})();
+}
+
+startServer();
