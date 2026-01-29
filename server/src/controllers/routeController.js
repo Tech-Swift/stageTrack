@@ -24,68 +24,63 @@ export async function getCounties(req, res) {
 }
 
 // ==================== Route Management ====================
+// Create route
 export async function createRoute(req, res) {
   try {
-    const user = req.user;
+    const route = await routeService.createRoute(req.body, req.user);
 
-    const isSuperAdmin =
-      req.saccoContext?.isSuperAdmin ||
-      user?.system_roles?.includes('super_admin');
-
-    const sacco_id =
-      req.params.saccoId ||
-      req.body.sacco_id ||
-      req.saccoMembership?.sacco_id ||
-      user?.sacco_id;
-
-    if (!sacco_id) {
-      return res.status(403).json({ message: 'No SACCO access' });
-    }
-
-
-    const route = await routeService.createRoute(
-      {
-        ...req.body,
-        sacco_id, 
-      },
-      user.id
-    );
-
-    return res.status(201).json({
-      message: 'Route created successfully',
-      route,
+    res.status(201).json({
+      success: true,
+      data: route
     });
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    console.error('CREATE ROUTE ERROR:', error);
+    res.status(400).json({ success: false, message: error.message });
   }
 }
 
-
+ /**
+ * GET /api/routes
+ * Returns all routes accessible to the user
+ */
 
 export async function getRoutes(req, res) {
   try {
-    const saccoId = req.params.saccoId || req.query.sacco_id || req.saccoMembership?.sacco_id;
     const options = {
+      sacco_id: req.query.sacco_id,
       county_id: req.query.county_id,
       is_active: req.query.is_active !== undefined ? req.query.is_active === 'true' : undefined,
-      include_stages: req.query.include_stages === 'true'
+      include_stages: true
     };
-    const routes = await routeService.getRoutesBySACCO(saccoId, options);
-    return res.json(routes);
+
+    const routes = await routeService.getRoutes(req.user, options);
+
+    return res.status(200).json({
+      success: true,
+      count: routes.length,
+      data: routes
+    });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.error('GET ROUTES ERROR:', error);
+    return res.status(400).json({ success: false, message: error.message });
   }
 }
 
+/**
+ * GET /api/routes/:id
+ * Returns a single route accessible to the user
+ */
 export async function getRouteById(req, res) {
   try {
-    const { routeId } = req.params;
-    const saccoId = req.params.saccoId || req.saccoMembership?.sacco_id;
-    const route = await routeService.getRouteById(routeId, saccoId);
-    return res.json(route);
+    const route = await routeService.getRouteById(req.params.id, req.user);
+
+    return res.status(200).json({
+      success: true,
+      data: route
+    });
   } catch (error) {
-    const status = error.message.includes('not found') ? 404 : 400;
-    return res.status(status).json({ message: error.message });
+    console.error('GET ROUTE BY ID ERROR:', error);
+    return res.status(400).json({ success: false, message: error.message });
   }
 }
 

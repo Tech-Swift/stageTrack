@@ -11,7 +11,7 @@ const Route = sequelize.define(
     },
     sacco_id: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
     },
     county_id: {
       type: DataTypes.UUID,

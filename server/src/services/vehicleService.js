@@ -201,13 +201,16 @@ export async function getVehicleById(vehicleId, saccoId = null) {
  * @param {string} saccoId - SACCO ID (for multi-tenancy check)
  * @param {string} userId - User ID performing the update
  */
-export async function updateVehicle(vehicleId, data, saccoId, userId) {
-  const vehicle = await Vehicle.findOne({
-    where: {
-      id: vehicleId,
-      sacco_id: saccoId // Multi-tenancy isolation
-    }
-  });
+export async function updateVehicle(vehicleId, data, saccoId, user) {
+  const isSuperAdmin = user.system_roles?.includes('super_admin');
+
+  const whereClause = { id: vehicleId };
+  if (!isSuperAdmin) {
+    // Only enforce SACCO isolation for normal users
+    whereClause.sacco_id = saccoId;
+  }
+
+  const vehicle = await Vehicle.findOne({ where: whereClause });
 
   if (!vehicle) {
     throw new Error('Vehicle not found or access denied');
@@ -219,56 +222,50 @@ export async function updateVehicle(vehicleId, data, saccoId, userId) {
   // Update allowed fields
   const allowedFields = ['plate_no', 'capacity', 'route_id', 'status'];
   const updateData = {};
-  
   allowedFields.forEach(field => {
-    if (data[field] !== undefined) {
-      updateData[field] = data[field];
-    }
+    if (data[field] !== undefined) updateData[field] = data[field];
   });
 
-  // Verify route exists if route_id is being updated
+  // Verify route exists
   if (updateData.route_id !== undefined && updateData.route_id !== null) {
-    const route = await Route.findOne({
-      where: {
-        id: updateData.route_id,
-        sacco_id: saccoId
-      }
-    });
-    if (!route) {
-      throw new Error('Route not found or does not belong to this SACCO');
-    }
+    const routeWhere = { id: updateData.route_id };
+    if (!isSuperAdmin) routeWhere.sacco_id = saccoId; // only restrict SACCO for normal users
+
+    const route = await Route.findOne({ where: routeWhere });
+    if (!route) throw new Error('Route not found or does not belong to this SACCO');
   }
 
-  // Check plate number uniqueness if being updated
+  // Plate number uniqueness (optional: per SACCO or global)
   if (updateData.plate_no && updateData.plate_no !== vehicle.plate_no) {
+    const plateWhere = { plate_no: updateData.plate_no };
+    if (!isSuperAdmin) plateWhere.sacco_id = saccoId; // optional: restrict per SACCO
+
     const existing = await Vehicle.findOne({
       where: {
-        plate_no: updateData.plate_no,
+        ...plateWhere,
         id: { [Op.ne]: vehicleId }
       }
     });
-    if (existing) {
-      throw new Error('Vehicle with this plate number already exists');
-    }
+    if (existing) throw new Error('Vehicle with this plate number already exists');
   }
 
   await vehicle.update(updateData);
 
-  // If status changed, log it in status history
+  // Status history
   if (updateData.status && updateData.status !== oldStatus) {
     await VehicleStatusHistory.create({
       vehicle_id: vehicleId,
       old_status: oldStatus,
       new_status: updateData.status,
-      changed_by: userId,
+      changed_by: user.id,
       reason: data.status_change_reason || 'Status updated'
     });
   }
 
   // Audit log
   await createAuditLog({
-    sacco_id: saccoId,
-    user_id: userId,
+    sacco_id: vehicle.sacco_id, // log the vehicle's SACCO, not necessarily the user's
+    user_id: user.id,
     action: 'update_vehicle',
     entity: 'vehicle',
     entity_id: vehicleId,
@@ -277,6 +274,7 @@ export async function updateVehicle(vehicleId, data, saccoId, userId) {
 
   return vehicle;
 }
+
 
 /**
  * Delete a vehicle

@@ -6,7 +6,7 @@ import express from 'express';
 import { authenticate } from '../middlewares/authMiddleware.js';
 import { checkSuperAdmin, enforceSaccoIsolation, verifySaccoAccess } from '../middlewares/saccoIsolation.js';
 import { requireRole } from '../middlewares/authorizeRole.js';
-import * as stageController from '../controllers/stageController.js';
+import * as routeController from '../controllers/routeController.js';
 
 const router = express.Router();
 
@@ -15,37 +15,39 @@ router.use(authenticate);
 router.use(checkSuperAdmin);
 
 // -------------------- COUNTIES --------------------
-router.get('/counties', stageController.getCounties);
+router.get('/counties',routeController.getCounties);
 
 // -------------------- ROUTES --------------------
 // Create route
 router.post(
-  '/:saccoId/routes',
+  '/',
+  authenticate,
+  requireRole('admin'),
   enforceSaccoIsolation,
   verifySaccoAccess,
-  requireRole('admin'),
-  stageController.createRoute
+ routeController.createRoute
 );
 
 // Get all routes for SACCO
 router.get(
-  '/routes',
-  stageController.getRoutes
+  '/',
+  requireRole('admin'),
+ routeController.getRoutes
 );
 
 router.get(
   '/:saccoId/routes',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getRoutes
+ routeController.getRoutes
 );
 
 // Get route by ID
 router.get(
-  '/:saccoId/routes/:routeId',
+  '/:id',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getRouteById
+ routeController.getRouteById
 );
 
 // Update route
@@ -54,7 +56,7 @@ router.put(
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
-  stageController.updateRoute
+ routeController.updateRoute
 );
 
 // Delete route
@@ -63,7 +65,7 @@ router.delete(
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
-  stageController.deleteRoute
+ routeController.deleteRoute
 );
 
 // Route stats
@@ -71,7 +73,7 @@ router.get(
   '/:saccoId/routes/:routeId/stats',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getRouteStats
+ routeController.getRouteStats
 );
 
 // -------------------- STAGES --------------------
@@ -81,7 +83,7 @@ router.post(
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
-  stageController.createStage
+ routeController.createStage
 );
 
 // Get stages for a route
@@ -89,7 +91,7 @@ router.get(
   '/:saccoId/routes/:routeId/stages',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getStages
+ routeController.getStages
 );
 
 // Get stage by ID
@@ -97,7 +99,7 @@ router.get(
   '/:saccoId/stages/:stageId',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getStageById
+ routeController.getStageById
 );
 
 // Update stage
@@ -106,7 +108,7 @@ router.put(
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
-  stageController.updateStage
+ routeController.updateStage
 );
 
 // Delete stage
@@ -115,7 +117,7 @@ router.delete(
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
-  stageController.deleteStage
+ routeController.deleteStage
 );
 
 // Stage stats
@@ -123,7 +125,7 @@ router.get(
   '/:saccoId/stages/:stageId/stats',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getStageStats
+ routeController.getStageStats
 );
 
 // -------------------- STAGE ASSIGNMENTS --------------------
@@ -133,7 +135,7 @@ router.post(
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
-  stageController.assignMarshal
+ routeController.assignMarshal
 );
 
 // Get assignments for a stage
@@ -141,7 +143,7 @@ router.get(
   '/:saccoId/stages/:stageId/assignments',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getStageAssignments
+ routeController.getStageAssignments
 );
 
 // Get assignments for a marshal
@@ -149,7 +151,7 @@ router.get(
   '/:saccoId/marshals/:userId/assignments',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getMarshalAssignments
+ routeController.getMarshalAssignments
 );
 
 // Update assignment
@@ -158,7 +160,7 @@ router.put(
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
-  stageController.updateAssignment
+ routeController.updateAssignment
 );
 
 // End assignment
@@ -167,7 +169,7 @@ router.patch(
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
-  stageController.endAssignment
+ routeController.endAssignment
 );
 
 // Get active marshals for a stage
@@ -175,7 +177,7 @@ router.get(
   '/:saccoId/stages/:stageId/marshals',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getActiveMarshals
+ routeController.getActiveMarshals
 );
 
 // -------------------- CAPACITY RULES --------------------
@@ -185,7 +187,7 @@ router.post(
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
-  stageController.createCapacityRule
+ routeController.createCapacityRule
 );
 
 // Get current capacity rule
@@ -193,7 +195,7 @@ router.get(
   '/:saccoId/stages/:stageId/capacity-rules/current',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getCurrentCapacityRule
+ routeController.getCurrentCapacityRule
 );
 
 // Get all capacity rules for a stage
@@ -201,7 +203,7 @@ router.get(
   '/:saccoId/stages/:stageId/capacity-rules',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getCapacityRules
+ routeController.getCapacityRules
 );
 
 // Update capacity rule
@@ -210,7 +212,7 @@ router.put(
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
-  stageController.updateCapacityRule
+ routeController.updateCapacityRule
 );
 
 // Delete capacity rule
@@ -219,7 +221,7 @@ router.delete(
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
-  stageController.deleteCapacityRule
+ routeController.deleteCapacityRule
 );
 
 // -------------------- STAGE LOGGING (Core Matatu Operations) --------------------
@@ -228,7 +230,7 @@ router.post(
   '/:saccoId/stages/:stageId/arrivals',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.logArrival
+ routeController.logArrival
 );
 
 // Log vehicle departure
@@ -236,7 +238,7 @@ router.post(
   '/:saccoId/stages/:stageId/departures',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.logDeparture
+ routeController.logDeparture
 );
 
 // Get real-time stage status
@@ -244,7 +246,7 @@ router.get(
   '/:saccoId/stages/:stageId/status',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getStageStatus
+ routeController.getStageStatus
 );
 
 // Check stage capacity
@@ -252,7 +254,7 @@ router.get(
   '/:saccoId/stages/:stageId/capacity',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.checkCapacity
+ routeController.checkCapacity
 );
 
 // Get vehicles currently at stage
@@ -260,7 +262,7 @@ router.get(
   '/:saccoId/stages/:stageId/vehicles',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getVehiclesAtStage
+ routeController.getVehiclesAtStage
 );
 
 // Get stage logs
@@ -268,7 +270,7 @@ router.get(
   '/:saccoId/stages/:stageId/logs',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getStageLogs
+ routeController.getStageLogs
 );
 
 // Get vehicle history
@@ -276,7 +278,7 @@ router.get(
   '/:saccoId/vehicles/:vehicleId/history',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  stageController.getVehicleHistory
+ routeController.getVehicleHistory
 );
 
 export default router;

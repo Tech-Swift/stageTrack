@@ -47,7 +47,7 @@ const lazyLoadRoute = (path) => async (req, res, next) => {
 app.use('/api/auth', lazyLoadRoute('./src/routes/authRoutes.js'));
 app.use('/api/roles', lazyLoadRoute('./src/routes/roleRoutes.js'));
 app.use('/api/saccos', lazyLoadRoute('./src/routes/saccoRoutes.js'));
-app.use('/api/stages', lazyLoadRoute('./src/routes/stageRoutes.js'));
+app.use('/api/routes', lazyLoadRoute('./src/routes/routeRoutes.js'));
 app.use('/api/vehicles', lazyLoadRoute('./src/routes/vehicleRoutes.js'));
 
 // Start server immediately
