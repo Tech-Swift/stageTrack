@@ -24,10 +24,12 @@ import VehicleOwner from './Vehicle/VehicleOwner.js';
 import VehicleOwnerLink from './Vehicle/VehicleOwnerLink.js';
 import VehicleDocument from './Vehicle/VehicleDocument.js';
 import VehicleStatusHistory from './Vehicle/VehicleStatusHistory.js';
+import VehicleRoute from './Vehicle/VehicleRoute.js';
 
 // Trip model
-import Trip from './Trip/Trip.js';
-import TripLog from './Trip/tripLog.model.js';
+import TripLog from './Trip/TripOperations.js';
+import TripFinancial from './Trip/TripFinancial.js';
+import TripOperation from './Trip/TripOperations.js';
 
 
 // -------------------- Role & Permission --------------------
@@ -145,9 +147,8 @@ SACCO.hasMany(Vehicle, { foreignKey: 'sacco_id', as: 'vehicles' });
 Vehicle.belongsTo(SACCO, { foreignKey: 'sacco_id', as: 'sacco' });
 
 // Route ↔ Vehicle (one-to-many)
-Route.hasMany(Vehicle, { foreignKey: 'route_id', as: 'vehicles' });
-Vehicle.belongsTo(Route, { foreignKey: 'route_id', as: 'route' });
-
+Vehicle.belongsToMany(Route, {through: VehicleRoute, foreignKey: 'vehicle_id', otherKey: 'route_id', as: 'Routes'});
+Route.belongsToMany(Vehicle, {through: VehicleRoute, foreignKey: 'route_id', otherKey: 'vehicle_id', as: 'Vehicles'});
 // Vehicle ↔ VehicleOwner (many-to-many through VehicleOwnerLink)
 Vehicle.belongsToMany(VehicleOwner, {
   through: VehicleOwnerLink,
@@ -183,11 +184,27 @@ User.hasMany(VehicleStatusHistory, { foreignKey: 'changed_by', as: 'vehicleStatu
 VehicleStatusHistory.belongsTo(User, { foreignKey: 'changed_by', as: 'changedBy' });
 
 // -------------------- Trip Associations --------------------
-TripLog.belongsTo(Vehicle, { foreignKey: "vehicle_id" });
-TripLog.belongsTo(Route, { foreignKey: "route_id" });
-TripLog.belongsTo(Stage, { as: "departureStage", foreignKey: "departure_stage_id" });
-TripLog.belongsTo(Stage, { as: "arrivalStage", foreignKey: "arrival_stage_id" });
-TripLog.belongsTo(CrewAssignment, { foreignKey: "crew_assignment_id" });
+TripOperation.belongsTo(Vehicle, { foreignKey: 'vehicle_id', as: 'vehicle' });
+Vehicle.hasMany(TripOperation, { foreignKey: 'vehicle_id', as: 'tripOperations' });
+
+TripOperation.belongsTo(Route, { foreignKey: 'route_id', as: 'route' });
+Route.hasMany(TripOperation, { foreignKey: 'route_id', as: 'tripOperations' });
+
+TripOperation.belongsTo(Stage, { foreignKey: 'departure_stage_id', as: 'departureStage' });
+Stage.hasMany(TripOperation, { foreignKey: 'departure_stage_id', as: 'departingTrips' });
+
+TripOperation.belongsTo(Stage, { foreignKey: 'arrival_stage_id', as: 'arrivalStage' });
+Stage.hasMany(TripOperation, { foreignKey: 'arrival_stage_id', as: 'arrivingTrips' });
+
+TripOperation.belongsTo(User, { foreignKey: 'crew_assignment_id', as: 'crewAssignment' });
+User.hasMany(TripOperation, { foreignKey: 'crew_assignment_id', as: 'assignedTrips' });
+
+TripFinancial.belongsTo(TripOperation, { foreignKey: 'trip_operation_id', as: 'tripOperation' });
+TripOperation.hasOne(TripFinancial, { foreignKey: 'trip_operation_id', as: 'financials' });
+
+TripFinancial.belongsTo(User, { foreignKey: 'stage_marshal_id', as: 'stageMarshal' });
+User.hasMany(TripFinancial, { foreignKey: 'stage_marshal_id', as: 'managedTripFinancials' });
+
 
 // -------------------- Export Models --------------------
 export default {
@@ -213,5 +230,7 @@ export default {
   VehicleOwnerLink,
   VehicleDocument,
   VehicleStatusHistory,
-  TripLog
+  VehicleRoute,
+  TripOperation,
+  TripFinancial
 };

@@ -18,11 +18,16 @@ import VehicleOwner from './Vehicle/VehicleOwner.js';
 import VehicleOwnerLink from './Vehicle/VehicleOwnerLink.js';
 import VehicleDocument from './Vehicle/VehicleDocument.js';
 import VehicleStatusHistory from './Vehicle/VehicleStatusHistory.js';
+import VehicleRoute from './Vehicle/VehicleRoute.js';
 import Role from './User/Role.js';
 import Permission from './User/Permission.js';
 import UserRole from './User/user_role.js';
 import RolePermission from './User/role_permission.js';
 import UserSession from './User/UserSession.js';
+
+// Trip models
+import TripOperation from './Trip/TripOperations.js';
+import TripFinancial from './Trip/TripFinancial.js';
 
 // Models with dependencies last
 import User from './User/User.js';
@@ -48,12 +53,15 @@ export {
   VehicleOwnerLink,
   VehicleDocument,
   VehicleStatusHistory,
+  VehicleRoute,
   Role,
   Permission,
   UserRole,
   RolePermission,
   UserSession,
-  User
+  User,
+  TripOperation,
+  TripFinancial
 };
 
 // This ensures all models are loaded and associations are set up
@@ -74,11 +82,14 @@ export default {
   VehicleOwnerLink,
   VehicleDocument,
   VehicleStatusHistory,
+  VehicleRoute,
   Role,
   Permission,
   UserRole,
   RolePermission,
   UserSession,
-  User
+  User,
+  TripOperation,
+  TripFinancial
 };
 

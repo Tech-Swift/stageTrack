@@ -19,7 +19,6 @@ export async function login(req, res) {
   try {
     const { identifier, password } = req.body;
     const result = await loginUser(identifier, password);
-    console.log('AUTH USER:', req.user);
     res.json(result);
   } catch (err) {
     res.status(401).json({ message: err.message });

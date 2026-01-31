@@ -3,7 +3,7 @@
  * Business logic for vehicle management with audit logging
  */
 import { Op } from 'sequelize';
-import { Vehicle, SACCO, Route, VehicleStatusHistory } from '../models/index.js';
+import { Vehicle, SACCO, Route, VehicleStatusHistory, VehicleRoute } from '../models/index.js';
 import { createAuditLog } from './saccoAuditLogService.js';
 
 /**
@@ -12,93 +12,123 @@ import { createAuditLog } from './saccoAuditLogService.js';
  * @param {string} data.plate_no - Vehicle plate number
  * @param {number} data.capacity - Vehicle capacity
  * @param {string} data.sacco_id - SACCO ID
- * @param {string} data.route_id - Route ID (optional)
  * @param {string} data.status - Initial status (default: "active")
  * @param {string} userId - User ID creating the vehicle
  */
 export async function createVehicle(data, user) {
-  // Destructure data and fallback SACCO ID from user token
-  const { plate_no, capacity, sacco_id: requestedSaccoId, route_id, status = 'active' } = data;
+  const transaction = await sequelize.transaction();
 
-  // Determine which SACCO this vehicle belongs to
-  const saccoId = requestedSaccoId || user.sacco_id; // token SACCO used if not provided
+  try {
+    const {
+      plate_no,
+      capacity,
+      sacco_id: requestedSaccoId,
+      status = 'active'
+    } = data;
 
-  // Debug log after declaration
-  console.log('SERVICE SACCO ID:', saccoId, 'USER:', user);
+    // Determine SACCO
+    const saccoId = requestedSaccoId || user.sacco_id;
 
-  // Validate required fields
-  if (!plate_no || !capacity || !saccoId) {
-    throw new Error('Plate number, capacity, and SACCO ID are required');
-  }
+    console.log('SERVICE SACCO ID:', saccoId, 'USER:', user);
 
-  // Check permission: non-super-admin can only create vehicles in their SACCO
-  const isSuperAdmin = user.system_roles?.includes('super_admin');
-  if (!isSuperAdmin && saccoId !== user.sacco_id) {
-    throw new Error('Access denied: cannot create vehicle for another SACCO');
-  }
-
-  // Verify SACCO exists
-  const sacco = await SACCO.findByPk(saccoId);
-  if (!sacco) {
-    throw new Error('SACCO not found');
-  }
-
-  // Verify route exists if provided and belongs to the SACCO
-  if (route_id) {
-    const route = await Route.findOne({
-      where: { id: route_id, sacco_id: saccoId }
-    });
-    if (!route) {
-      throw new Error('Route not found or does not belong to this SACCO');
+    // Validate required fields
+    if (!plate_no || !capacity || !saccoId) {
+      throw new Error('Plate number, capacity, and SACCO ID are required');
     }
+
+    // Permission check
+    const isSuperAdmin = user.system_roles?.includes('super_admin');
+    if (!isSuperAdmin && saccoId !== user.sacco_id) {
+      throw new Error('Access denied: cannot create vehicle for another SACCO');
+    }
+
+    // Verify SACCO exists
+    const sacco = await SACCO.findByPk(saccoId, { transaction });
+    if (!sacco) {
+      throw new Error('SACCO not found');
+    }
+
+    // Check duplicate plate number
+    const existing = await Vehicle.findOne({
+      where: { plate_no },
+      transaction
+    });
+    if (existing) {
+      throw new Error('Vehicle with this plate number already exists');
+    }
+
+    // 1️⃣ Create vehicle 
+    const vehicle = await Vehicle.create({
+      plate_no,
+      capacity,
+      sacco_id: saccoId,
+      status
+    }, { transaction });
+
+    // 2️⃣ Fetch ALL active routes for the SACCO
+    const routes = await Route.findAll({
+      where: {
+        sacco_id: saccoId,
+        is_active: true
+      },
+      transaction
+    });
+
+    if (!routes.length) {
+      throw new Error('Cannot create vehicle: SACCO has no active routes');
+    }
+
+    // 3️⃣ Attach vehicle to ALL routes
+    const vehicleRoutes = routes.map(route => ({
+      vehicle_id: vehicle.id,
+      sacco_id: saccoId,
+      status: 'active'
+    }));
+
+    await VehicleRoute.bulkCreate(vehicleRoutes, { transaction });
+
+    // 4️⃣ Status history
+    await VehicleStatusHistory.create({
+      vehicle_id: vehicle.id,
+      old_status: null,
+      new_status: status,
+      changed_by: user.id,
+      reason: 'Initial vehicle registration'
+    }, { transaction });
+
+    // 5️⃣ Audit log
+    await createAuditLog({
+      sacco_id: saccoId,
+      user_id: user.id,
+      action: 'create_vehicle',
+      entity: 'vehicle',
+      entity_id: vehicle.id,
+      metadata: {
+        plate_no,
+        capacity,
+        status,
+        routes_assigned: routes.length
+      }
+    }, { transaction });
+
+    await transaction.commit();
+    return vehicle;
+
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
   }
-
-  // Check if plate number already exists
-  const existing = await Vehicle.findOne({ where: { plate_no } });
-  if (existing) {
-    throw new Error('Vehicle with this plate number already exists');
-  }
-
-  // Create vehicle
-  const vehicle = await Vehicle.create({
-    plate_no,
-    capacity,
-    sacco_id: saccoId,
-    route_id: route_id || null,
-    status
-  });
-
-  // Create initial status history entry
-  await VehicleStatusHistory.create({
-    vehicle_id: vehicle.id,
-    old_status: null,
-    new_status: status,
-    changed_by: user.saccoId ? user.id : null,
-    reason: 'Initial vehicle registration'
-  });
-
-  // Audit log
-  await createAuditLog({
-    sacco_id: saccoId,
-    user_id: user.id,
-    action: 'create_vehicle',
-    entity: 'vehicle',
-    entity_id: vehicle.id,
-    metadata: { plate_no, capacity, route_id: route_id || null, status }
-  });
-
-  return vehicle;
 }
+
 /**
  * Get all vehicles for a SACCO
  * @param {string} saccoId - SACCO ID
  * @param {Object} options - Filter options
- * @param {string} options.route_id - Filter by route ID
  * @param {string} options.status - Filter by status
  */
 
 export async function getVehicles(filter = {}, user) {
-  const { sacco_id: querySaccoId, route_id, status } = filter;
+  const { sacco_id: querySaccoId, status } = filter;
 
   const where = {};
 
@@ -111,17 +141,13 @@ export async function getVehicles(filter = {}, user) {
       where.sacco_id = querySaccoId;
     }
   }
-
   // 🔵 SACCO ADMIN — STRICT TENANT ISOLATION
   else if (isAdmin) {
     if (!user.sacco_id) {
       throw new Error("Admin account is not assigned to any SACCO");
     }
-
-    // Ignore any sacco_id from query — enforce tenant boundary
     where.sacco_id = user.sacco_id;
   }
-
   // 🟡 Other roles (manager, director, etc.)
   else if (user.sacco_id) {
     where.sacco_id = user.sacco_id;
@@ -130,8 +156,15 @@ export async function getVehicles(filter = {}, user) {
   }
 
   // Optional filters
-  if (route_id) where.route_id = route_id;
   if (status) where.status = status;
+
+  const routeInclude = {
+    model: Route,
+    as: "Routes",             // ✅ must match association alias
+    attributes: ["id", "route_code", "origin", "destination"],
+    through: { attributes: [] },
+    required: false
+  };
 
   const vehicles = await Vehicle.findAll({
     where,
@@ -139,16 +172,11 @@ export async function getVehicles(filter = {}, user) {
       {
         model: SACCO,
         as: "sacco",
-        attributes: ["id", "name", "status"],
+        attributes: ["id", "name", "status"]
       },
-      {
-        model: Route,
-        as: "route",
-        attributes: ["id", "route_code", "origin", "destination"],
-        required: false,
-      },
+      routeInclude
     ],
-    order: [["created_at", "DESC"]],
+    order: [["created_at", "DESC"]]
   });
 
   return vehicles;
@@ -179,7 +207,7 @@ export async function getVehicleById(vehicleId, saccoId = null) {
       },
       {
         model: Route,
-        as: 'route',
+        as: 'Routes',
         attributes: ['id', 'route_code', 'origin', 'destination'],
         required: false
       }
@@ -220,20 +248,11 @@ export async function updateVehicle(vehicleId, data, saccoId, user) {
   const oldStatus = vehicle.status;
 
   // Update allowed fields
-  const allowedFields = ['plate_no', 'capacity', 'route_id', 'status'];
+  const allowedFields = ['plate_no', 'capacity', 'status'];
   const updateData = {};
   allowedFields.forEach(field => {
     if (data[field] !== undefined) updateData[field] = data[field];
   });
-
-  // Verify route exists
-  if (updateData.route_id !== undefined && updateData.route_id !== null) {
-    const routeWhere = { id: updateData.route_id };
-    if (!isSuperAdmin) routeWhere.sacco_id = saccoId; // only restrict SACCO for normal users
-
-    const route = await Route.findOne({ where: routeWhere });
-    if (!route) throw new Error('Route not found or does not belong to this SACCO');
-  }
 
   // Plate number uniqueness (optional: per SACCO or global)
   if (updateData.plate_no && updateData.plate_no !== vehicle.plate_no) {

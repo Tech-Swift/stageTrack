@@ -49,8 +49,7 @@ app.use('/api/roles', lazyLoadRoute('./src/routes/roleRoutes.js'));
 app.use('/api/saccos', lazyLoadRoute('./src/routes/saccoRoutes.js'));
 app.use('/api/routes', lazyLoadRoute('./src/routes/routeRoutes.js'));
 app.use('/api/vehicles', lazyLoadRoute('./src/routes/vehicleRoutes.js'));
-app.use('/api/trips', lazyLoadRoute('./src/routes/tripLogRoutes.js'));
-
+app.use('/api/trips', lazyLoadRoute('./src/routes/tripRoutes.js'));
 // Start server immediately
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

@@ -22,10 +22,6 @@ const Vehicle = sequelize.define(
       type: DataTypes.UUID,
       allowNull: false
     },
-    route_id: {
-      type: DataTypes.UUID,
-      allowNull: true // Optional, vehicle might not be assigned to a route initially
-    },
     status: {
       type: DataTypes.STRING(50),
       defaultValue: "active", // active, inactive, suspended, maintenance
