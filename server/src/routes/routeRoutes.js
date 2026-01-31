@@ -66,24 +66,24 @@ router.get(
 // -------------------- STAGES --------------------
 // Create stage
 router.post(
-  '/:saccoId/stages',
+  '/:routeId/stages',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  requireRole('admin'),
- routeController.createStage
+  requireRole('manager'),
+  routeController.createStage
 );
 
 // Get stages for a route
 router.get(
-  '/:saccoId/routes/:routeId/stages',
+  '/:routeId/stages',
   enforceSaccoIsolation,
   verifySaccoAccess,
- routeController.getStages
+  routeController.getStagesByRoute
 );
 
 // Get stage by ID
 router.get(
-  '/:saccoId/stages/:stageId',
+  '/stages/:stageId',
   enforceSaccoIsolation,
   verifySaccoAccess,
  routeController.getStageById
@@ -91,29 +91,31 @@ router.get(
 
 // Update stage
 router.put(
-  '/:saccoId/stages/:stageId',
+  '/:routeId/stages/:stageId',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  requireRole('admin'),
- routeController.updateStage
+  requireRole('manager'),
+  routeController.updateStage
 );
 
 // Delete stage
 router.delete(
-  '/:saccoId/stages/:stageId',
+  '/:routeId/stages/:stageId',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  requireRole('admin'),
+  requireRole('director'),
  routeController.deleteStage
 );
 
 // Stage stats
 router.get(
-  '/:saccoId/stages/:stageId/stats',
+  '/:routeId/stages/:stageId/stats',
   enforceSaccoIsolation,
   verifySaccoAccess,
- routeController.getStageStats
+  requireRole('stage_marshal'),
+  routeController.getStageStats
 );
+
 
 // -------------------- STAGE ASSIGNMENTS --------------------
 // Assign marshal to stage

@@ -16,76 +16,57 @@ import { createAuditLog } from './saccoAuditLogService.js';
  * @param {string} data.destination - Destination point
  * @param {string} userId - User ID creating the route
  */
-export async function createRoute(data, user) {
+export async function createStage(data, user) {
+  const { route_id, name, sequence_order } = data;
+
+  // Validate input
+  if (!route_id || !name || sequence_order === undefined) {
+    throw new Error('Route ID, name, and sequence order are required');
+  }
+
+  // Determine user's highest role (SACCO role preferred, fallback to system roles)
+  const userHighest = user.sacco_role || highestRole(user.system_roles || []);
+
+  // Super admin bypass
   const isSuperAdmin = user.system_roles?.includes('super_admin');
-  const isAdmin = user.system_roles?.includes('admin');
 
-  let saccoId = null;
-
-  // 🟢 NORMAL ADMIN → always forced to their SACCO
-  if (isAdmin && !isSuperAdmin) {
-    if (!user.sacco_id) {
-      throw new Error('Admin is not assigned to any SACCO');
-    }
-    saccoId = user.sacco_id;
+  if (!userHighest && !isSuperAdmin) {
+    throw new Error('User has no role assigned');
   }
 
-  // 🔵 SUPER ADMIN → may or may not provide SACCO
-  if (isSuperAdmin) {
-    saccoId = data.sacco_id || null; // null = global route
+  // Minimum role required to create a stage
+  const minRole = 'manager';
+
+  if (!isSuperAdmin && ROLE_ORDER.indexOf(userHighest) < ROLE_ORDER.indexOf(minRole)) {
+    throw new Error(`Insufficient permissions: at least ${minRole} role required`);
   }
 
-  const { county_id, route_code, origin, destination, is_active = true } = data;
-
-  if (!county_id || !route_code || !origin || !destination) {
-    throw new Error('county_id, route_code, origin, and destination are required');
+  // Verify route exists and belongs to the user's SACCO (unless super admin)
+  const route = await getRouteById(route_id, user);
+  if (!route) {
+    throw new Error('Route not found or does not belong to your SACCO');
   }
 
-  // If SACCO is provided, verify it exists
-  if (saccoId) {
-    const sacco = await SACCO.findByPk(saccoId);
-    if (!sacco) throw new Error('SACCO not found');
+  // Check if sequence_order already exists for this route
+  const existingSequence = await Stage.findOne({ where: { route_id, sequence_order } });
+  if (existingSequence) {
+    throw new Error(`Stage with sequence order ${sequence_order} already exists for this route`);
   }
 
-  // Route code uniqueness rule:
-  // - If route belongs to SACCO → unique within that SACCO
-  // - If global route → must be globally unique
-  const existing = await Route.findOne({
-    where: saccoId
-      ? { sacco_id: saccoId, route_code }
-      : { sacco_id: null, route_code }
-  });
+  // Create the stage
+  const stage = await Stage.create({ route_id, name, sequence_order });
 
-  if (existing) {
-    throw new Error(
-      saccoId
-        ? 'Route code already exists for this SACCO'
-        : 'Global route code already exists'
-    );
-  }
-
-  const county = await County.findByPk(county_id);
-  if (!county) throw new Error('County not found');
-
-  const route = await Route.create({
-    sacco_id: saccoId, // null if global
-    county_id,
-    route_code,
-    origin,
-    destination,
-    is_active
-  });
-
+  // Audit log
   await createAuditLog({
-    sacco_id: saccoId,
+    sacco_id: user.sacco_id,
     user_id: user.id,
-    action: 'create_route',
-    entity: 'route',
-    entity_id: route.id,
-    metadata: { route_code, origin, destination }
+    action: 'create_stage',
+    entity: 'stage',
+    entity_id: stage.id,
+    metadata: { route_id, name, sequence_order }
   });
 
-  return route;
+  return stage;
 }
 
 /**

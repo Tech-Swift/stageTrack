@@ -132,72 +132,89 @@ export async function deleteRoute(req, res) {
 
 export async function createStage(req, res) {
   try {
-    const saccoId = req.params.saccoId || req.body.sacco_id || req.saccoMembership?.sacco_id;
-    const userId = req.user.id;
-    const stage = await stageService.createStage(req.body, saccoId, userId);
-    return res.status(201).json({ message: 'Stage created successfully', stage });
+    // Attach route_id from URL to request body
+    const stageData = { ...req.body, route_id: req.params.routeId };
+
+    const stage = await stageService.createStage(stageData, req.user);
+    return res.status(201).json({
+      message: 'Stage created successfully',
+      stage
+    });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }
 }
 
-export async function getStages(req, res) {
+
+export async function getStagesByRoute(req, res) {
   try {
     const { routeId } = req.params;
-    const saccoId = req.params.saccoId || req.query.sacco_id || req.saccoMembership?.sacco_id;
-    const stages = await stageService.getStagesByRoute(routeId, saccoId);
-    return res.json(stages);
+    const stages = await stageService.getStagesByRoute(routeId, req.user);
+
+    return res.status(200).json({ success: true, stages });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(403).json({ success: false, message: error.message });
   }
 }
 
 export async function getStageById(req, res) {
   try {
     const { stageId } = req.params;
-    const saccoId = req.params.saccoId || req.saccoMembership?.sacco_id;
-    const stage = await stageService.getStageById(stageId, saccoId);
-    return res.json(stage);
+    const stage = await stageService.getStageById(stageId, req.user);
+
+    return res.status(200).json({ success: true, stage });
   } catch (error) {
-    const status = error.message.includes('not found') ? 404 : 400;
-    return res.status(status).json({ message: error.message });
+    return res.status(403).json({ success: false, message: error.message });
   }
 }
 
 export async function updateStage(req, res) {
   try {
-    const { stageId } = req.params;
-    const saccoId = req.params.saccoId || req.saccoMembership?.sacco_id;
-    const userId = req.user.id;
-    const stage = await stageService.updateStage(stageId, req.body, saccoId, userId);
-    return res.json({ message: 'Stage updated successfully', stage });
+    const { routeId, stageId } = req.params;
+
+    const stage = await stageService.updateStage(
+      stageId,
+      routeId,
+      req.body,
+      req.user
+    );
+
+    return res.json({
+      success: true,
+      message: 'Stage updated successfully',
+      stage
+    });
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    return res.status(400).json({ success: false, message: error.message });
   }
 }
 
 export async function deleteStage(req, res) {
   try {
-    const { stageId } = req.params;
-    const saccoId = req.params.saccoId || req.saccoMembership?.sacco_id;
-    const userId = req.user.id;
-    const result = await stageService.deleteStage(stageId, saccoId, userId);
-    return res.json(result);
+    const { routeId, stageId } = req.params;
+
+    await stageService.deleteStage(stageId, routeId, req.user);
+
+    return res.json({
+      success: true,
+      message: 'Stage deleted successfully'
+    });
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    return res.status(400).json({ success: false, message: error.message });
   }
 }
 
 export async function getStageStats(req, res) {
   try {
     const { stageId } = req.params;
-    const saccoId = req.params.saccoId || req.saccoMembership?.sacco_id;
-    const stats = await stageService.getStageStats(stageId, saccoId);
-    return res.json(stats);
+    const stats = await stageService.getStageStats(stageId, req.user);
+    return res.status(200).json({ success: true, data: stats });
   } catch (error) {
-    return res.status(404).json({ message: error.message });
+    console.error('GET STAGE STATS ERROR:', error);
+    return res.status(403).json({ success: false, message: error.message });
   }
 }
+
 
 // ==================== Stage Assignment Management ====================
 
