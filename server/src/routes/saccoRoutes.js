@@ -18,7 +18,7 @@ router.use(checkSuperAdmin); // sets req.saccoContext?.isSuperAdmin
 // -------------------- USER-SACCO MANAGEMENT --------------------
 // Add user to SACCO
 router.post(
-  '/:saccoId/users',
+  '/users',
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
@@ -49,11 +49,11 @@ router.get(
 
 // Update SACCO user
 router.put(
-  '/:saccoId/users/:id',
+  '/users/:id',
   enforceSaccoIsolation,
   verifySaccoAccess,
   requireRole('admin'),
-  saccoController.updateSACCOUser
+  saccoController.updateSACCOUserController
 );
 
 // Remove user

@@ -123,7 +123,7 @@ router.post(
   '/:saccoId/stages/:stageId/assignments',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  requireRole('admin'),
+  requireRole('manager'),
  routeController.assignMarshal
 );
 

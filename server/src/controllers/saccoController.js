@@ -240,18 +240,22 @@ export async function addUserToSACCO(req, res) {
     res.status(400).json({ message: error.message });
   }
 }
-
-export async function updateSACCOUser(req, res) {
+export async function updateSACCOUserController(req, res) {
   try {
-    console.log('🔥 updateSACCOUser', { user: req.user, params: req.params, body: req.body });
+    const targetUserId = req.params.id;          // user being updated
+    const updatedByUserId = req.user.id;        // admin performing the update
+    let saccoId = req.params.saccoId;           // only used if super_admin
 
-    const { id } = req.params;
-    const userId = req.user.id;
-    const saccoId = req.params.saccoId || req.saccoMembership?.sacco_id;
-    const saccoUser = await saccoUserService.updateSACCOUser(id, req.body, saccoId, userId);
+    const saccoUser = await saccoUserService.updateSACCOUser(
+      targetUserId,
+      req.body,
+      saccoId,
+      updatedByUserId
+    );
+
     res.json({ message: 'SACCO user updated successfully', saccoUser });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 }
 

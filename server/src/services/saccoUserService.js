@@ -16,48 +16,52 @@ import { createAuditLog } from './saccoAuditLogService.js';
  * @param {string} assignedBy - Admin assigning the user
  */
 export async function addUserToSACCO(data, assignedBy) {
-  const { user_id, sacco_id, branch_id, role_id, status = 'active' } = data;
+    let { user_id, sacco_id, branch_id, role_id, status = 'active' } = data;
 
-  // Step 1: Validate required fields
-  if (!user_id || !sacco_id || !role_id) {
-    throw new Error('User ID, SACCO ID, and role ID are required');
+  // -------------------
+  // Step 0: Determine SACCO based on who is adding
+  // -------------------
+  const admin = await User.findByPk(assignedBy, {
+    include: [{ model: Role, as: 'roles' }]
+  });
+  if (!admin) throw new Error('Admin not found');
+
+  const isSuperAdmin = admin.roles.some(r => r.name === 'super_admin');
+
+  if (!isSuperAdmin) {
+    // For regular admins, override sacco_id from their token
+    if (!admin.sacco_id) throw new Error('Admin is not assigned to a SACCO');
+    sacco_id = admin.sacco_id;
+  } else {
+    // Super admin must provide SACCO ID
+    if (!sacco_id) throw new Error('SACCO ID is required for super admin');
   }
 
-  // Fetch user
+  // -------------------
+  // Step 1: Validate required fields
+  // -------------------
+  if (!user_id || !role_id) { // sacco_id is now guaranteed
+    throw new Error('User ID and role ID are required');
+  }
+
+  // -------------------
+  // The rest of your original code stays unchanged
+  // -------------------
   const user = await User.findByPk(user_id);
   if (!user) throw new Error('User not found');
 
-  // Fetch SACCO
   const sacco = await SACCO.findByPk(sacco_id);
   if (!sacco) throw new Error('SACCO not found');
 
-  // Fetch branch if provided
   if (branch_id) {
     const branch = await SaccoBranch.findOne({ where: { id: branch_id, sacco_id } });
     if (!branch) throw new Error('Branch not found or does not belong to this SACCO');
   }
 
-  // Fetch role by ID
   const role = await Role.findByPk(role_id);
   if (!role) throw new Error('Role not found');
 
-  // Fetch the admin performing the action
-  const admin = await User.findByPk(assignedBy, {
-    include: [{ model: Role, as: 'roles' }]
-  });
-
-  if (!admin) throw new Error('Admin not found');
-
-  // Super admin bypass
-  const isSuperAdmin = admin.roles.some(r => r.name === 'super_admin');
-
   if (!isSuperAdmin) {
-    // SACCO isolation
-    if (admin.sacco_id !== sacco_id) {
-      throw new Error('Cannot assign users to a SACCO outside your own');
-    }
-
-    // Hierarchy enforcement
     const adminMaxHierarchy = Math.max(...admin.roles.map(r => r.hierarchy_level));
     if (role.hierarchy_level >= adminMaxHierarchy) {
       throw new Error('Cannot assign a role equal or higher than your own');
