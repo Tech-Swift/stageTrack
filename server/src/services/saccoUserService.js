@@ -142,45 +142,90 @@ export async function addUserToSACCO(data, assignedBy) {
  * @param {string} saccoId - SACCO ID (for multi-tenancy check)
  * @param {string} userId - User ID performing the update
  */
-export async function updateSACCOUser(userId, data, saccoId, updatedByUserId) {
-  const saccoUser = await SaccoUser.findOne({
-    where: {
-      user_id: userId,
-      sacco_id: saccoId // Multi-tenancy isolation
-    }
+export async function updateSACCOUser(userId, data, saccoIdFromParam, updatedByUserId) {
+  // -------------------
+  // Step 0: Fetch the admin/director performing the update
+  // -------------------
+  const admin = await User.findByPk(updatedByUserId, {
+    include: [{ model: Role, as: 'roles' }]
   });
+  if (!admin) throw new Error('Admin not found');
 
+  const isSuperAdmin = admin.roles.some(r => r.name === 'super_admin');
+
+  // -------------------
+  // Step 1: Determine SACCO ID
+  // -------------------
+  let sacco_id;
+  if (!isSuperAdmin) {
+    if (!admin.sacco_id) throw new Error('You are not assigned to a SACCO');
+    sacco_id = admin.sacco_id; // take from token for admin/director
+  } else {
+    sacco_id = saccoIdFromParam;
+    if (!sacco_id) throw new Error('SACCO ID is required for super admin');
+  }
+
+  // -------------------
+  // Step 2: Fetch target SACCO user
+  // -------------------
+  const saccoUser = await SaccoUser.findOne({
+    where: { id: userId, sacco_id }
+  });
   if (!saccoUser) {
-    throw new Error('SACCO user relationship not found or access denied');
+    throw new Error("Access denied: You do not have permission to access this SACCO's data");
   }
 
   const oldData = { ...saccoUser.toJSON() };
 
-  // Update allowed fields
+  // -------------------
+  // Step 3: Prepare updates
+  // -------------------
   const allowedFields = ['branch_id', 'role', 'status'];
   const updateData = {};
 
   allowedFields.forEach(field => {
-    if (data[field] !== undefined) {
-      updateData[field] = data[field];
-    }
+    if (data[field] !== undefined) updateData[field] = data[field];
   });
 
-  // Verify branch if provided
+  // -------------------
+  // Step 4: Verify branch if provided
+  // -------------------
   if (updateData.branch_id) {
     const branch = await SaccoBranch.findOne({
-      where: { id: updateData.branch_id, sacco_id: saccoId }
+      where: { id: updateData.branch_id, sacco_id } // ✅ use sacco_id
     });
-    if (!branch) {
-      throw new Error('Branch not found or does not belong to this SACCO');
-    }
+    if (!branch) throw new Error('Branch not found or does not belong to this SACCO');
   }
 
-  await saccoUser.update(updateData);
+  // -------------------
+  // Step 5: Verify role hierarchy if updating role
+  // -------------------
+  // Step 5: Verify role hierarchy if updating role
+    if (data.role_id) {
+      const role = await Role.findByPk(data.role_id);
+      if (!role) throw new Error('Role not found');
 
-  // Audit log
+      if (!isSuperAdmin) {
+        const adminMaxHierarchy = Math.max(...admin.roles.map(r => r.hierarchy_level));
+        if (role.hierarchy_level >= adminMaxHierarchy) {
+          throw new Error('Cannot assign a role equal or higher than your own');
+        }
+      }
+
+      updateData.role = role.name; // store the normalized role name
+    }
+
+  // -------------------
+  // Step 6: Apply updates
+  // -------------------
+  await saccoUser.update(updateData);
+  await saccoUser.reload();
+
+  // -------------------
+  // Step 7: Audit log
+  // -------------------
   await createAuditLog({
-    sacco_id: saccoId,
+    sacco_id, // ✅ use sacco_id
     user_id: updatedByUserId,
     action: 'update_sacco_user',
     entity: 'sacco_user',

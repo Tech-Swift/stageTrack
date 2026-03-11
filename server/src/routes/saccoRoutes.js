@@ -52,7 +52,7 @@ router.put(
   '/users/:id',
   enforceSaccoIsolation,
   verifySaccoAccess,
-  requireRole('admin'),
+  requireRole('director'),
   saccoController.updateSACCOUserController
 );
 

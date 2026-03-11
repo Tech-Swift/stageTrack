@@ -242,16 +242,17 @@ export async function addUserToSACCO(req, res) {
 }
 export async function updateSACCOUserController(req, res) {
   try {
-    const targetUserId = req.params.id;          // user being updated
-    const updatedByUserId = req.user.id;        // admin performing the update
-    let saccoId = req.params.saccoId;           // only used if super_admin
+    const targetUserId = req.params.id;
+    const updatedByUserId = req.user.id;
 
     const saccoUser = await saccoUserService.updateSACCOUser(
       targetUserId,
       req.body,
-      saccoId,
+      req.params.saccoId, 
       updatedByUserId
     );
+
+    await saccoUser.reload();
 
     res.json({ message: 'SACCO user updated successfully', saccoUser });
   } catch (err) {

@@ -115,75 +115,82 @@ export function applySaccoFilter(query, saccoId, isSuperAdmin = false) {
  */
 export async function verifySaccoAccess(req, res, next) {
   try {
-    // Normalize candidate SACCO ID from common locations
-    const requestedSaccoId =
-      req.params.saccoId ||
-      req.params.id ||
-      req.body.sacco_id ||
-      req.query.sacco_id;
+    console.log('🔥 verifySaccoAccess hit');
+    console.log('req.user:', req.user);
+    console.log('req.params:', req.params);
+    console.log('req.body:', req.body);
+    console.log('req.query:', req.query);
+
+    // Normalize candidate SACCO ID
+    let requestedSaccoId = req.params.saccoId || req.body.sacco_id || req.query.sacco_id;
+    console.log('Initial requestedSaccoId:', requestedSaccoId);
 
     // Ensure authenticated user
     if (!req.user || !req.user.id) {
+      console.log('No authenticated user');
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    // 1️⃣ Super admin bypass (system_roles or saccoContext)
+    // Super admin bypass
     const isSuperAdmin =
       req.user.system_roles?.includes('super_admin') ||
       req.saccoContext?.isSuperAdmin;
+    console.log('isSuperAdmin:', isSuperAdmin);
 
     if (isSuperAdmin) {
       console.log('Super admin bypassing SACCO access check');
       return next();
     }
 
-    // 2️⃣ If no SACCO specified, allow access (controllers can apply filters)
+    // Fallback for admins/directors: use token SACCO
     if (!requestedSaccoId) {
-      return next();
+      requestedSaccoId = req.user.sacco_id;
+      console.log('Fallback to token SACCO:', requestedSaccoId);
     }
 
-    // 3️⃣ Validate UUID
-    const isUuid = typeof requestedSaccoId === 'string' && /^[0-9a-fA-F-]{36}$/.test(requestedSaccoId);
-    if (!isUuid) {
-      return next(); // skip membership check for non-UUID values
-    }
-
-    // 4️⃣ Fast path: user’s SACCO matches requested SACCO
-    if (req.user.sacco_id && String(req.user.sacco_id) === String(requestedSaccoId)) {
-      return next();
-    }
-
-    // 5️⃣ Check sacco_users membership as fallback
-    let membership;
-    try {
-      membership = await SaccoUser.findOne({
-        where: {
-          user_id: req.user.id,
-          sacco_id: requestedSaccoId,
-          status: 'active'
-        }
+    if (!requestedSaccoId) {
+      console.log('No SACCO ID found after fallback');
+      return res.status(403).json({
+        message: 'Access denied: No SACCO found for this user'
       });
-    } catch (dbErr) {
-      console.error('verifySaccoAccess DB error:', dbErr);
-      return res.status(500).json({ message: 'Database error while verifying SACCO access' });
     }
+
+    // Validate UUID
+    const isUuid = typeof requestedSaccoId === 'string' && /^[0-9a-fA-F-]{36}$/.test(requestedSaccoId);
+    console.log('requestedSaccoId is UUID?', isUuid);
+
+    // Fast path: user's SACCO matches requested SACCO
+    if (String(req.user.sacco_id) === String(requestedSaccoId)) {
+      console.log('User SACCO matches requested SACCO, access granted');
+      return next();
+    }
+
+    // Fallback: check membership
+    console.log('Checking sacco_users membership...');
+    const membership = await SaccoUser.findOne({
+      where: {
+        user_id: req.user.id,
+        sacco_id: requestedSaccoId,
+        status: 'active'
+      }
+    });
 
     if (!membership) {
+      console.log('Membership not found for user in this SACCO');
       return res.status(403).json({
         message: "Access denied: You do not have permission to access this SACCO's data"
       });
     }
 
-    // Attach membership for downstream handlers
     req.saccoMembership = membership;
+    console.log('Membership found:', membership.toJSON());
     return next();
-    
+
   } catch (err) {
     console.error('verifySaccoAccess error:', err);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
-
 
 
 export default {
