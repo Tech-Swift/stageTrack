@@ -20,11 +20,23 @@ export async function getSACCOUsers(req, res) {
       query: req.query
     });
 
-    const { saccoId } = req.params;
+    // Determine saccoId
+    const saccoId =
+      req.params.saccoId ||
+      req.saccoMembership?.sacco_id ||
+      req.user?.sacco_id;
+
+    if (!saccoId) {
+      return res.status(400).json({
+        message: "SACCO ID could not be determined"
+      });
+    }
 
     const options = {};
+
     if (req.query.branch_id) options.branch_id = req.query.branch_id;
     if (req.query.status) options.status = req.query.status;
+
     if (req.query.role) {
       options.roles = req.query.role
         .split(',')
@@ -33,7 +45,9 @@ export async function getSACCOUsers(req, res) {
     }
 
     const users = await saccoUserService.getSACCOUsers(saccoId, options);
+
     return res.json(users);
+
   } catch (err) {
     console.error('getSACCOUsers error:', err);
     return res.status(500).json({ message: err.message });

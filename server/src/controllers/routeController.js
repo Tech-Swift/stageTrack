@@ -220,29 +220,27 @@ export async function getStageStats(req, res) {
 
 export async function assignMarshal(req, res) {
   try {
+    // Determine SACCO context: from params, body, or user's membership
     const saccoId = req.params.saccoId || req.body.sacco_id || req.saccoMembership?.sacco_id;
     const userId = req.user.id;
+
+    // Call service to assign marshal
     const assignment = await stageAssignmentService.assignMarshalToStage(req.body, saccoId, userId);
-    return res.status(201).json({ message: 'Marshal assigned to stage successfully', assignment });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Marshal assigned to stage successfully',
+      assignment
+    });
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    console.error('ASSIGN MARSHAL ERROR:', error);
+    return res.status(400).json({ success: false, message: error.message });
   }
 }
 
-export async function getStageAssignments(req, res) {
-  try {
-    const { stageId } = req.params;
-    const saccoId = req.params.saccoId || req.saccoMembership?.sacco_id;
-    const options = {
-      active_only: req.query.active_only === 'true',
-      include_user: req.query.include_user !== 'false'
-    };
-    const assignments = await stageAssignmentService.getStageAssignments(stageId, saccoId, options);
-    return res.json(assignments);
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-}
+ // Get all assignments for a stage
+ 
+
 
 export async function getMarshalAssignments(req, res) {
   try {

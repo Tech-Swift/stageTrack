@@ -15,6 +15,63 @@ const router = express.Router();
 router.use(authenticate);
 router.use(checkSuperAdmin); // sets req.saccoContext?.isSuperAdmin
 
+// -------------------- USER-SACCO MANAGEMENT --------------------
+// Add user to SACCO
+router.post(
+  '/:saccoId/users',
+  enforceSaccoIsolation,
+  verifySaccoAccess,
+  requireRole('admin'),
+  saccoController.addUserToSACCO
+);
+
+// Get all users in SACCO
+router.get(
+  '/users',
+  saccoController.getSACCOUsers
+);
+
+router.get(
+  '/:saccoId/users',
+  enforceSaccoIsolation,
+  verifySaccoAccess,
+  saccoController.getSACCOUsers
+);
+
+// Single SACCO user
+router.get(
+  '/:saccoId/users/:id',
+  enforceSaccoIsolation,
+  verifySaccoAccess,
+  requireRole('admin'),
+  saccoController.getSACCOUserById
+);
+
+// Update SACCO user
+router.put(
+  '/:saccoId/users/:id',
+  enforceSaccoIsolation,
+  verifySaccoAccess,
+  requireRole('admin'),
+  saccoController.updateSACCOUser
+);
+
+// Remove user
+router.delete(
+  '/:saccoId/users/:id',
+  enforceSaccoIsolation,
+  verifySaccoAccess,
+  requireRole('admin'),
+  saccoController.removeUserFromSACCO
+);
+
+// Get user's SACCO memberships
+router.get(
+  '/users/:userId/saccos',
+  saccoController.getUserSACCOs
+);
+
+
 // -------------------- SACCO CRUD --------------------
 // Create SACCO (super_admin only)
 router.post(
@@ -121,61 +178,6 @@ router.delete(
   saccoController.deleteBranch
 );
 
-// -------------------- USER-SACCO MANAGEMENT --------------------
-// Add user to SACCO
-router.post(
-  '/:saccoId/users',
-  enforceSaccoIsolation,
-  verifySaccoAccess,
-  requireRole('admin'),
-  saccoController.addUserToSACCO
-);
-
-// Get all users in SACCO
-router.get(
-  '/users',
-  saccoController.getSACCOUsers
-);
-
-router.get(
-  '/:saccoId/users',
-  enforceSaccoIsolation,
-  verifySaccoAccess,
-  saccoController.getSACCOUsers
-);
-
-// Single SACCO user
-router.get(
-  '/:saccoId/users/:id',
-  enforceSaccoIsolation,
-  verifySaccoAccess,
-  requireRole('admin'),
-  saccoController.getSACCOUserById
-);
-
-// Update SACCO user
-router.put(
-  '/:saccoId/users/:id',
-  enforceSaccoIsolation,
-  verifySaccoAccess,
-  requireRole('admin'),
-  saccoController.updateSACCOUser
-);
-
-// Remove user
-router.delete(
-  '/:saccoId/users/:id',
-  enforceSaccoIsolation,
-  verifySaccoAccess,
-  requireRole('admin'),
-  saccoController.removeUserFromSACCO
-);
-
-// Get user's SACCO memberships
-router.get(
-  '/users/:userId/saccos',
-  saccoController.getUserSACCOs
-);
 
 // -------------------- SETTINGS --------------------
 // SACCO settings
