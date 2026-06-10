@@ -1,0 +1,191 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  SACCO_ADMIN
+  STAGE_MARSHAL
+}
+
+enum ArrivalStatus {
+  ARRIVED
+  WAITING
+  DISPATCHED
+}
+
+model Tenant {
+  id   String @id @default(cuid())
+  name String
+
+  users         User[]
+  routes        Route[]
+  stages        Stage[]
+  vehicleOwners VehicleOwner[]
+  vehicles      Vehicle[]
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  platformCharges PlatformCharge[]
+}
+
+model User {
+  id String @id @default(cuid())
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
+  name     String
+  email    String @unique
+  password String
+
+  role UserRole
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Route {
+  id String @id @default(cuid())
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  name        String
+  origin      String
+  destination String
+
+  stages     Stage[]
+  dispatches Dispatch[]
+}
+
+model Stage {
+  id String @id @default(cuid())
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  routeId String
+  route   Route  @relation(fields: [routeId], references: [id])
+
+  name String
+
+  arrivals   Arrival[]
+  dispatches Dispatch[]
+}
+
+model VehicleOwner {
+  id String @id @default(cuid())
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  name  String
+  phone String
+
+  vehicles Vehicle[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Vehicle {
+  id String @id @default(cuid())
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  vehicleOwnerId String
+  vehicleOwner   VehicleOwner @relation(fields: [vehicleOwnerId], references: [id])
+
+  registrationNumber String @unique
+
+  plateSuffix String
+
+  capacity Int
+
+  isActive Boolean @default(true)
+
+  arrivals   Arrival[]
+  dispatches Dispatch[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([plateSuffix])
+}
+
+model Arrival {
+  id String @id @default(cuid())
+
+  vehicleId String
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+
+  stageId String
+  stage   Stage  @relation(fields: [stageId], references: [id])
+
+  arrivalTime DateTime @default(now())
+
+  status ArrivalStatus @default(ARRIVED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Dispatch {
+  id String @id @default(cuid())
+
+  vehicleId String
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+
+  routeId String
+  route   Route  @relation(fields: [routeId], references: [id])
+
+  stageId String
+  stage   Stage  @relation(fields: [stageId], references: [id])
+
+  dispatchTime DateTime @default(now())
+
+  fare Decimal @db.Decimal(10, 2)
+
+  stageFee Decimal @db.Decimal(10, 2)
+
+  paymentConfirmed Boolean @default(false)
+
+  expectedRevenue Decimal @db.Decimal(12, 2)
+
+  platformCharge PlatformCharge?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlatformCharge {
+  id String @id @default(cuid())
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  dispatchId String   @unique
+  dispatch   Dispatch @relation(fields: [dispatchId], references: [id])
+
+  commissionRate Decimal @db.Decimal(5, 2)
+
+  amount Decimal @db.Decimal(12, 2)
+
+  paid Boolean @default(false)
+
+  paidAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
