@@ -13,8 +13,17 @@ datasource db {
 
 enum UserRole {
   SUPER_ADMIN
+
   SACCO_ADMIN
+
+  DIRECTOR
+  MANAGER
+
   STAGE_MARSHAL
+
+  DRIVER
+  CONDUCTOR
+  VEHICLE_OWNER
 }
 
 enum ArrivalStatus {
@@ -24,14 +33,22 @@ enum ArrivalStatus {
 }
 
 model Tenant {
-  id   String @id @default(cuid())
+  id String @id @default(cuid())
+
   name String
+
+  code String @unique
+
+  email String?
+  phone String?
 
   users         User[]
   routes        Route[]
   stages        Stage[]
   vehicleOwners VehicleOwner[]
   vehicles      Vehicle[]
+
+  registrationRequests RegistrationRequest[]
 
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -49,6 +66,37 @@ model User {
   password String
 
   role UserRole
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model RegistrationRequest {
+  id String @id @default(cuid())
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  firstName String
+  lastName  String
+
+  phone String
+
+  nationalId String
+
+  role UserRole
+
+  licenceUrl String?
+  badgeUrl   String?
+  logbookUrl String?
+
+  status RegistrationStatus @default(PENDING)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

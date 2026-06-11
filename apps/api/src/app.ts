@@ -1,4 +1,5 @@
 import express from "express";
+import tenantRoutes from "./routes/tenant.routes";
 import vehicleRoutes from "./modules/vehicles/vehicle.routes";
 
 const app = express();
@@ -11,6 +12,7 @@ app.get("/health", (_, res) => {
   });
 });
 
+app.use("/api/tenants", tenantRoutes);
 app.use("/vehicles", vehicleRoutes);
 
 export default app;
