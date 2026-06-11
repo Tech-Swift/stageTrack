@@ -51,8 +51,18 @@ export const getTenants = async (
   res: Response
 ): Promise<void> => {
   try {
-    const [count, tenants] = await Promise.all([
+    const [count, activeCount, inactiveCount, tenants] = await Promise.all([
       prisma.tenant.count(),
+      prisma.tenant.count({
+        where:{
+          isActive: true,
+        },
+      }),
+      prisma.tenant.count({
+        where:{
+          isActive: false
+        },
+      }),
       prisma.tenant.findMany({
         orderBy: {
           createdAt: "desc",
@@ -63,6 +73,8 @@ export const getTenants = async (
     res.status(200).json({
       success: true,
       count,
+      activeCount,
+      inactiveCount,
       data: tenants,
     });
   } catch (error) {
