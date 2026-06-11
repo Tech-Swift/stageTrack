@@ -42,6 +42,8 @@ model Tenant {
   email String?
   phone String?
 
+  isActive Boolean @default(true)
+
   users         User[]
   routes        Route[]
   stages        Stage[]
