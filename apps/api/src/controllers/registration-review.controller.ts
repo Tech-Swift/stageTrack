@@ -143,6 +143,28 @@ export const approveRegistration = async (
       },
     });
 
+    await prisma.userProfile.create({
+      data: {
+        userId: user.id,
+
+        firstName: request.firstName,
+        lastName: request.lastName,
+        phone: request.phone,
+        nationalId: request.nationalId,
+
+        profileImageUrl: request.profileImageUrl,
+
+        goodConductUrl: request.goodConductUrl,
+
+        licenceUrl: request.licenceUrl,
+
+        badgeUrl: request.badgeUrl,
+
+        vehicleLogbookUrl: request.vehicleLogbookUrl,
+      },
+    });
+
+
     const token =
       crypto.randomBytes(32).toString("hex");
 

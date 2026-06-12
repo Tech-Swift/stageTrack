@@ -24,35 +24,6 @@ model Tenant {
   vehicleOwners        VehicleOwner[]
 }
 
-model User {
-  id        String   @id @default(cuid())
-  tenantId  String?
-  name      String
-  email     String   @unique
-  password  String?
-  role      UserRole
-  accountStatus AccountStatus @default(PENDING_SETUP)
-  setupTokens PasswordSetupToken[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
-}
-
-model PasswordSetupToken {
-  id String @id @default(cuid())
-
-  userId String
-  user User @relation(fields: [userId], references: [id])
-
-  token String @unique
-
-  expiresAt DateTime
-
-  used Boolean @default(false)
-
-  createdAt DateTime @default(now())
-}
-
 model RegistrationRequest {
   id                String             @id @default(cuid())
   tenantId          String
@@ -66,12 +37,86 @@ model RegistrationRequest {
   status            RegistrationStatus @default(PENDING)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
-  email             String @unique
+  email             String             @unique
   goodConductUrl    String?
   profileImageUrl   String?
   rejectionReason   String?
   vehicleLogbookUrl String?
   tenant            Tenant             @relation(fields: [tenantId], references: [id])
+}
+
+model PasswordSetupToken {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  token String @unique
+
+  expiresAt DateTime
+
+  used Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  tenantId            String?
+  name                String
+  email               String               @unique
+  password            String?
+  role                UserRole
+  profile             UserProfile?
+  accountStatus       AccountStatus        @default(PENDING_SETUP)
+  setupTokens         PasswordSetupToken[]
+  resetTokens         PasswordResetToken[]
+  lastLoginAt         DateTime?
+  failedLoginAttempts Int                  @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  tenant              Tenant?              @relation(fields: [tenantId], references: [id])
+}
+
+model UserProfile {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  firstName  String
+  lastName   String
+  phone      String
+  nationalId String
+
+  profileImageUrl String?
+
+  goodConductUrl String?
+
+  licenceUrl String?
+
+  badgeUrl String?
+
+  vehicleLogbookUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PasswordResetToken {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  token String @unique
+
+  expiresAt DateTime
+
+  used Boolean @default(false)
+
+  createdAt DateTime @default(now())
 }
 
 model Route {
