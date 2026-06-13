@@ -1,10 +1,11 @@
-declare namespace Express {
-  interface Request {
-    user?: {
-      userId: string;
-      tenantId: string;
-      tenantCode: string;
-      role: string;
-    };
+import { JwtPayload } from "../utils/jwt";
+
+declare global {
+  namespace Express {
+    interface Request{
+      user?: JwtPayload;
+    }
   }
 }
+
+export{};

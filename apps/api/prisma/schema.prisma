@@ -25,24 +25,43 @@ model Tenant {
 }
 
 model RegistrationRequest {
-  id                String             @id @default(cuid())
-  tenantId          String
-  firstName         String
-  lastName          String
-  phone             String
-  nationalId        String
-  role              UserRole
+  id String @id @default(cuid())
+
+  tenantId String
+  userId   String? @unique
+
+  firstName  String
+  lastName   String
+  email      String @unique
+  phone      String
+  nationalId String
+
+  role   UserRole
+  status RegistrationStatus @default(PENDING)
+
+  // Submitted documents
   licenceUrl        String?
   badgeUrl          String?
-  status            RegistrationStatus @default(PENDING)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  email             String             @unique
   goodConductUrl    String?
   profileImageUrl   String?
-  rejectionReason   String?
   vehicleLogbookUrl String?
-  tenant            Tenant             @relation(fields: [tenantId], references: [id])
+
+  approvedById String?
+  approvedAt   DateTime?
+
+  rejectedById    String?
+  rejectedAt      DateTime?
+  rejectionReason String?
+
+  user User? @relation(fields: [userId], references: [id])
+
+  approvedBy User? @relation("RegistrationApprovedBy", fields: [approvedById], references: [id])
+  rejectedBy User? @relation("RegistrationRejectedBy", fields: [rejectedById], references: [id])
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PasswordSetupToken {
@@ -77,6 +96,10 @@ model User {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   tenant              Tenant?              @relation(fields: [tenantId], references: [id])
+
+  registrationRequests RegistrationRequest[]
+  approvedRequests     RegistrationRequest[] @relation("RegistrationApprovedBy")
+  rejectedRequests     RegistrationRequest[] @relation("RegistrationRejectedBy")
 }
 
 model UserProfile {
@@ -217,12 +240,12 @@ model PlatformCharge {
 enum UserRole {
   SUPER_ADMIN
   SACCO_ADMIN
-  STAGE_MARSHAL
   DIRECTOR
   MANAGER
+  STAGE_MARSHAL
+  VEHICLE_OWNER
   DRIVER
   CONDUCTOR
-  VEHICLE_OWNER
 }
 
 enum RegistrationStatus {

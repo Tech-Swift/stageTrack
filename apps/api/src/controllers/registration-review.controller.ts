@@ -7,62 +7,50 @@ export const getRegistrationRequests = async (
   res: Response
 ): Promise<void> => {
   try {
+
     const tenantCode = req.query.tenantCode
-      ? String(req.query.tenantCode)
-      : undefined;
+    ? String(req.query.tenantCode)
+    : undefined;
 
     const status = req.query.status
       ? String(req.query.status)
       : undefined;
 
-    let tenantId: string | undefined;
+    const isSuperAdmin =
+      req.user!.role === "SUPER_ADMIN";
 
-    if (tenantCode) {
-      const tenant = await prisma.tenant.findUnique({
-        where: {
-          code: tenantCode,
-        },
-      });
+    const whereClause: any = {};
 
-      if (!tenant) {
-        res.status(404).json({
-          success: false,
-          message: "Tenant not found",
-        });
-        return;
-      }
 
-      tenantId = tenant.id;
+    if (!isSuperAdmin) {
+      whereClause.tenantId = req.user!.tenantId;
+    } else if (tenantCode) {
+      whereClause.tenant = {
+        code: tenantCode,
+      };
+    }
+    if (status) {
+      whereClause.status = status;
     }
 
     const requests =
-        await prisma.registrationRequest.findMany({
-            where: {
-            ...(tenantCode && {
-                tenant: {
-                code: tenantCode,
-                },
-            }),
+      await prisma.registrationRequest.findMany({
+        where: whereClause,
 
-            ...(status && {
-                status: status as any,
-            }),
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
             },
+          },
+        },
 
-            include: {
-            tenant: {
-                select: {
-                id: true,
-                name: true,
-                code: true,
-                },
-            },
-            },
-
-            orderBy: {
-            createdAt: "desc",
-            },
-        });
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
     res.status(200).json({
       success: true,
@@ -86,16 +74,19 @@ export const approveRegistration = async (
   try {
     const id = String(req.params.id);
 
-    const tenantCode = String(req.query.tenantCode);
+    const isSuperAdmin =
+      req.user!.role === "SUPER_ADMIN";
+    const whereClause: any = {
+      id,
+    };
+
+    if (!isSuperAdmin) {
+      whereClause.tenantId = req.user!.tenantId;
+    }
 
     const request =
       await prisma.registrationRequest.findFirst({
-        where: {
-          id,
-          tenant: {
-            code: tenantCode,
-          },
-        },
+        where: whereClause,
         include: {
           tenant: true,
         },
@@ -153,17 +144,12 @@ export const approveRegistration = async (
         nationalId: request.nationalId,
 
         profileImageUrl: request.profileImageUrl,
-
         goodConductUrl: request.goodConductUrl,
-
         licenceUrl: request.licenceUrl,
-
         badgeUrl: request.badgeUrl,
-
         vehicleLogbookUrl: request.vehicleLogbookUrl,
       },
     });
-
 
     const token =
       crypto.randomBytes(32).toString("hex");
@@ -184,6 +170,8 @@ export const approveRegistration = async (
       },
       data: {
         status: "APPROVED",
+        approvedById: req.user!.userId,
+        approvedAt: new Date(),
       },
     });
 
