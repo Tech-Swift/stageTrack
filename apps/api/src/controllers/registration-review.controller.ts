@@ -124,55 +124,52 @@ export const approveRegistration = async (
       return;
     }
 
-    const user = await prisma.user.create({
-      data: {
-        tenantId: request.tenantId,
-        name: `${request.firstName} ${request.lastName}`,
-        email: request.email,
-        role: request.role,
-        accountStatus: "PENDING_SETUP",
-      },
-    });
+    const result = await prisma.$transaction(async (tx) => {
 
-    await prisma.userProfile.create({
-      data: {
-        userId: user.id,
+      const user = await tx.user.upsert({
+        where: { email: request.email },
+        update: {},
+        create: {
+          tenantId: request.tenantId,
+          name: `${request.firstName} ${request.lastName}`,
+          email: request.email,
+          role: request.role,
+          accountStatus: "PENDING_SETUP",
+        },
+      });
 
-        firstName: request.firstName,
-        lastName: request.lastName,
-        phone: request.phone,
-        nationalId: request.nationalId,
+      await tx.userProfile.create({
+        data: {
+          userId: user.id,
+          firstName: request.firstName,
+          lastName: request.lastName,
+          phone: request.phone,
+          nationalId: request.nationalId,
+          profileImageUrl: request.profileImageUrl,
+          goodConductUrl: request.goodConductUrl,
+          licenceUrl: request.licenceUrl,
+          badgeUrl: request.badgeUrl,
+          vehicleLogbookUrl: request.vehicleLogbookUrl,
+        },
+      });
 
-        profileImageUrl: request.profileImageUrl,
-        goodConductUrl: request.goodConductUrl,
-        licenceUrl: request.licenceUrl,
-        badgeUrl: request.badgeUrl,
-        vehicleLogbookUrl: request.vehicleLogbookUrl,
-      },
-    });
+      const token = crypto.randomBytes(32).toString("hex");
 
-    const token =
-      crypto.randomBytes(32).toString("hex");
+      await tx.passwordSetupToken.create({
+        data: {
+          userId: user.id,
+          token,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
 
-    await prisma.passwordSetupToken.create({
-      data: {
-        userId: user.id,
-        token,
-        expiresAt: new Date(
-          Date.now() + 24 * 60 * 60 * 1000
-        ),
-      },
-    });
+      console.log("Deleting registration request with id:", id);
+      console.log("PARAM ID:", req.params.id);
+      await tx.registrationRequest.delete({
+        where: { id: request.id },
+      });
 
-    await prisma.registrationRequest.update({
-      where: {
-        id,
-      },
-      data: {
-        status: "APPROVED",
-        approvedById: req.user!.userId,
-        approvedAt: new Date(),
-      },
+      return { user, token };
     });
 
     res.status(200).json({
@@ -182,8 +179,8 @@ export const approveRegistration = async (
         code: request.tenant.code,
         name: request.tenant.name,
       },
-      setupToken: token,
-      user,
+      setupToken: result.token,
+      user: result.user,
     });
   } catch (error) {
     console.error(error);

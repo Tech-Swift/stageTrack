@@ -22,6 +22,6 @@ app.use("/api/registrations", registrationRoutes);
 app.use("/api/registration-reviews", registrationReviewRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/vehicles", vehicleRoutes);
+app.use("/api/vehicles", vehicleRoutes);
 
 export default app;

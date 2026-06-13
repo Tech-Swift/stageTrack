@@ -10,6 +10,7 @@ import {
 } from "../controllers/registration-review.controller";
 
 import {
+  SYSTEM_ADMIN_ROLES,
   REGISTRATION_REVIEW_ROLES,
   REGISTRATION_APPROVAL_ROLES,
 } from "../constants/roles";
@@ -26,7 +27,8 @@ router.get(
 router.patch(
   "/:id/approve",
   authenticate,
-  authorize(...REGISTRATION_APPROVAL_ROLES),
+  authorize(...SYSTEM_ADMIN_ROLES,
+    ...REGISTRATION_APPROVAL_ROLES),
   approveRegistration
 );
 
