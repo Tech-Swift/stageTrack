@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { AuthUser } from "../types/auth.types";
 
 export const authenticate = (
   req: Request,
@@ -26,7 +27,13 @@ export const authenticate = (
       process.env.JWT_SECRET!
     ) as any;
 
-    req.user = decoded;
+    const user: AuthUser ={
+      userId: decoded.userId,
+      tenantId: decoded.tenantId,
+      role: decoded.role,
+    };
+
+    req.user = user;
 
     next();
   } catch (error) {
