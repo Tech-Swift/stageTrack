@@ -1,13 +1,12 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
+import { VehicleStatus } from "@prisma/client";
 
 export const registerVehicle = async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
-
+    const { userId, tenantId } = req.user!;
     const { registrationNumber, plateNumber, capacity } = req.body;
 
-    // 1. Ensure user is vehicle owner
     const owner = await prisma.vehicleOwner.findUnique({
       where: { userId },
     });
@@ -19,7 +18,6 @@ export const registerVehicle = async (req: Request, res: Response) => {
       });
     }
 
-    // 2. Create vehicle
     const vehicle = await prisma.vehicle.create({
       data: {
         tenantId: owner.tenantId,
@@ -27,7 +25,7 @@ export const registerVehicle = async (req: Request, res: Response) => {
         registrationNumber,
         plateNumber,
         capacity,
-        status: "PENDING_APPROVAL",
+        status: VehicleStatus.PENDING_APPROVAL,
       },
     });
 
@@ -45,7 +43,7 @@ export const registerVehicle = async (req: Request, res: Response) => {
   }
 };
 
-export const approveVehicle = async (req: Request, res: Response) => {
+export const scheduleInspection = async (req: Request, res: Response) => {
   try {
     const vehicleId = String(req.params.id);
     const { inspectionDate, inspectionNotes } = req.body;
@@ -63,27 +61,27 @@ export const approveVehicle = async (req: Request, res: Response) => {
     }
 
     // tenant isolation
-    if (
-      vehicle.tenantId !== user.tenantId &&
-      user.role !== "SUPER_ADMIN"
-    ) {
+    if (vehicle.tenantId !== user.tenantId && user.role !== "SUPER_ADMIN") {
       return res.status(403).json({
         success: false,
         message: "Not allowed for this tenant",
       });
     }
 
+    if (vehicle.status !== "PENDING_APPROVAL") {
+      return res.status(400).json({
+        success: false,
+        message: "Vehicle not in pending state",
+      });
+    }
+
     const updated = await prisma.vehicle.update({
       where: { id: vehicleId },
       data: {
-        status: "INSPECTION_SCHEDULED",
-        inspectionDate: inspectionDate
-          ? new Date(inspectionDate)
-          : null,
+        status: VehicleStatus.INSPECTION_SCHEDULED,
+        inspectionDate: inspectionDate ? new Date(inspectionDate) : null,
         inspectionNotes,
         inspectionById: user.userId,
-        approvedById: user.userId,
-        approvedAt: new Date(),
       },
     });
 
@@ -96,7 +94,419 @@ export const approveVehicle = async (req: Request, res: Response) => {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: "Inspection scheduling failed",
+      message: "Failed to schedule inspection",
+    });
+  }
+};
+
+export const markInspected = async (req: Request, res: Response) => {
+  try {
+    const vehicleId = String(req.params.id);
+    const user = req.user!;
+
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id: vehicleId },
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found",
+      });
+    }
+
+    if (vehicle.status !== "INSPECTION_SCHEDULED") {
+      return res.status(400).json({
+        success: false,
+        message: "Inspection not scheduled",
+      });
+    }
+
+    const updated = await prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: {
+        status: VehicleStatus.INSPECTED,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Vehicle marked as inspected",
+      data: updated,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to mark inspected",
+    });
+  }
+};
+
+export const approveVehicle = async (req: Request, res: Response) => {
+  try {
+    const vehicleId = String(req.params.id);
+    const user = req.user!;
+
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id: vehicleId },
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found",
+      });
+    }
+
+    if (vehicle.status !== "INSPECTED") {
+      return res.status(400).json({
+        success: false,
+        message: "Vehicle must be inspected first",
+      });
+    }
+
+    const updated = await prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: {
+        status: VehicleStatus.APPROVED,
+        approvedById: user.userId,
+        approvedAt: new Date(),
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Vehicle approved",
+      data: updated,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Approval failed",
+    });
+  }
+};
+
+export const activateVehicle = async (req: Request, res: Response) => {
+  try {
+    const vehicleId = String(req.params.id);
+    const user = req.user!;
+
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id: vehicleId },
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found",
+      });
+    }
+
+    if (vehicle.status !== "APPROVED") {
+      return res.status(400).json({
+        success: false,
+        message: "Vehicle must be approved first",
+      });
+    }
+
+    const updated = await prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: {
+        status: VehicleStatus.ACTIVE,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Vehicle activated",
+      data: updated,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Activation failed",
+    });
+  }
+};
+
+export const suspendVehicle = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const vehicleId = String(req.params.id);
+    const { reason } = req.body;
+    const user = req.user!;
+
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id: vehicleId },
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found",
+      });
+    }
+
+    // tenant isolation
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      vehicle.tenantId !== user.tenantId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Not allowed for this tenant",
+      });
+    }
+
+    if (vehicle.status !== VehicleStatus.ACTIVE) {
+      return res.status(400).json({
+        success: false,
+        message: "Only active vehicles can be suspended",
+      });
+    }
+
+    const updated = await prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: {
+        status: VehicleStatus.SUSPENDED,
+        suspendedById: user.userId,
+        suspendedAt: new Date(),
+        suspensionReason: reason,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Vehicle suspended successfully",
+      data: updated,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Vehicle suspension failed",
+    });
+  }
+};
+
+export const reactivateVehicle = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const vehicleId = String(req.params.id);
+    const user = req.user!;
+
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id: vehicleId },
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found",
+      });
+    }
+
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      vehicle.tenantId !== user.tenantId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Not allowed for this tenant",
+      });
+    }
+
+    if (vehicle.status !== VehicleStatus.SUSPENDED) {
+      return res.status(400).json({
+        success: false,
+        message: "Vehicle is not suspended",
+      });
+    }
+
+    const updated = await prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: {
+        status: VehicleStatus.ACTIVE,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Vehicle reactivated successfully",
+      data: updated,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Vehicle reactivation failed",
+    });
+  }
+};
+
+export const rejectVehicle = async (req: Request, res: Response) => {
+  try {
+    const vehicleId = String(req.params.id);
+    const { reason } = req.body;
+    const user = req.user!;
+
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id: vehicleId },
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found",
+      });
+    }
+
+    const updated = await prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: {
+        status: VehicleStatus.REJECTED,
+        rejectionReason: reason,
+        approvedById: user.userId,
+        approvedAt: new Date(),
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Vehicle rejected",
+      data: updated,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Rejection failed",
+    });
+  }
+};
+
+export const getVehicles = async (req: Request, res: Response) => {
+  try {
+    const user = req.user!;
+    const { status, tenantCode } = req.query;
+
+    const whereClause: any = {};
+
+    // status filter
+    if (status) {
+      whereClause.status = status;
+    }
+
+    // SUPER ADMIN can filter by tenantCode
+    if (user.role === "SUPER_ADMIN" && tenantCode) {
+      const tenant = await prisma.tenant.findUnique({
+        where: { code: String(tenantCode) },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({
+          success: false,
+          message: "Tenant not found",
+        });
+      }
+
+      whereClause.tenantId = tenant.id;
+    }
+
+    // ALL OTHER USERS are locked to their tenant
+    if (user.role !== "SUPER_ADMIN") {
+      if (!user.tenantId) {
+        return res.status(403).json({
+          success: false,
+          message: "No tenant context",
+        });
+      }
+
+      whereClause.tenantId = user.tenantId;
+    }
+
+    const vehicles = await prisma.vehicle.findMany({
+      where: whereClause,
+      include: {
+        owner: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    res.json({
+      success: true,
+      count: vehicles.length,
+      data: vehicles,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch vehicles",
+    });
+  }
+};
+
+export const getVehicleById = async (req: Request, res: Response) => {
+  try {
+    const vehicleId = String(req.params.id);
+    const user = req.user!;
+
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id: vehicleId },
+      include: {
+        owner: true,
+      },
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found",
+      });
+    }
+
+    if (
+      vehicle.tenantId !== user.tenantId &&
+      user.role !== "SUPER_ADMIN"
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Not allowed for this tenant",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: vehicle,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch vehicle",
     });
   }
 };

@@ -200,6 +200,9 @@ model Vehicle {
   inspectionById  String?
   approvedById    String?
   approvedAt      DateTime?
+  suspendedById   String?
+  suspendedAt     DateTime?
+  suspensionReason  String?
   rejectionReason String?
 
   createdAt DateTime @default(now())
@@ -278,6 +281,7 @@ enum AccountStatus {
 enum VehicleStatus {
   PENDING_APPROVAL
   INSPECTION_SCHEDULED
+  INSPECTED
   APPROVED
   ACTIVE
   SUSPENDED
