@@ -5,7 +5,7 @@ import registrationReviewRoutes from "./routes/registration-review.routes";
 import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
 
-import vehicleRoutes from "./modules/vehicles/vehicle.routes";
+import vehicleRoutes from "./routes/vehicle.routes";
 
 const app = express();
 app.use(express.json());
@@ -22,7 +22,6 @@ app.use("/api/registrations", registrationRoutes);
 app.use("/api/registration-reviews", registrationReviewRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-
 app.use("/vehicles", vehicleRoutes);
 
 export default app;
