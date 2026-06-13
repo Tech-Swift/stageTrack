@@ -87,6 +87,7 @@ model User {
   password            String?
   role                UserRole
   profile             UserProfile?
+  vehicleOwner        VehicleOwner?
   accountStatus       AccountStatus        @default(PENDING_SETUP)
   setupTokens         PasswordSetupToken[]
   resetTokens         PasswordResetToken[]
@@ -165,32 +166,43 @@ model Stage {
 }
 
 model VehicleOwner {
-  id        String    @id @default(cuid())
-  tenantId  String
-  name      String
-  phone     String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  vehicles  Vehicle[]
-  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  id       String @id @default(cuid())
+  tenantId String
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  vehicles Vehicle[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 }
 
 model Vehicle {
-  id                 String       @id @default(cuid())
-  tenantId           String
-  vehicleOwnerId     String
-  registrationNumber String       @unique
-  plateSuffix        String
-  capacity           Int
-  isActive           Boolean      @default(true)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-  arrivals           Arrival[]
-  dispatches         Dispatch[]
-  tenant             Tenant       @relation(fields: [tenantId], references: [id])
-  vehicleOwner       VehicleOwner @relation(fields: [vehicleOwnerId], references: [id])
+  id       String @id @default(cuid())
+  tenantId String
 
-  @@index([plateSuffix])
+  ownerId String
+  owner   VehicleOwner @relation(fields: [ownerId], references: [id])
+
+  registrationNumber String
+  plateNumber        String
+  capacity           Int?
+
+  status VehicleStatus @default(PENDING_APPROVAL)
+
+  arrivals        Arrival[]
+  dispatches      Dispatch[]
+  approvedById    String?
+  approvedAt      DateTime?
+  rejectionReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 }
 
 model Arrival {
@@ -258,6 +270,14 @@ enum AccountStatus {
   PENDING_SETUP
   ACTIVE
   SUSPENDED
+}
+
+enum VehicleStatus {
+  PENDING_APPROVAL
+  APPROVED
+  ACTIVE
+  SUSPENDED
+  REJECTED
 }
 
 enum ArrivalStatus {
