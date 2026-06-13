@@ -3,6 +3,7 @@ import tenantRoutes from "./routes/tenant.routes";
 import registrationRoutes from "./routes/registration.routes";
 import registrationReviewRoutes from "./routes/registration-review.routes";
 import authRoutes from "./routes/auth.routes";
+import userRoutes from "./routes/user.routes";
 
 import vehicleRoutes from "./modules/vehicles/vehicle.routes";
 
@@ -20,6 +21,7 @@ app.use("/api/tenants", tenantRoutes);
 app.use("/api/registrations", registrationRoutes);
 app.use("/api/registration-reviews", registrationReviewRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 
 app.use("/vehicles", vehicleRoutes);
 
