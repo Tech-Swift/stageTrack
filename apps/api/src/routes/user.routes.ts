@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middlewares/auth.middleware";
-import { SYSTEM_ADMIN_ROLES, TENANT_ADMIN_ROLES } from "../constants/roles";
+import { TENANT_ADMIN_ROLES,ROLE_ASSIGNMENT_ROLES, USER_STATUS_ROLES } from "../constants/roles";
 import { authorize } from "../middlewares/authorize.middleware";
 import {
     getUsers,
@@ -28,14 +28,14 @@ router.get(
 router.patch(
   "/:id/status",
   authenticate,
-  authorize(...TENANT_ADMIN_ROLES),
+  authorize(...USER_STATUS_ROLES),
   updateUserStatus
 );
 
 router.patch(
   "/:id/role",
   authenticate,
-  authorize(...SYSTEM_ADMIN_ROLES,...TENANT_ADMIN_ROLES),
+  authorize(...ROLE_ASSIGNMENT_ROLES),
   updateUserRole
 );
 

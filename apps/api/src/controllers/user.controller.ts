@@ -153,17 +153,25 @@ export const updateUserStatus = async (req: Request, res: Response) => {
   }
 };
 
-export const updateUserRole = async (req: Request, res: Response) => {
+export const updateUserRole = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const id = String(req.params.id);
     const { role } = req.body;
 
-    const isSuperAdmin = req.user!.role === "SUPER_ADMIN";
+    const actorRole = req.user!.role;
+    const isSuperAdmin =
+      actorRole === "SUPER_ADMIN";
 
-    const whereClause: any = { id };
+    const whereClause: any = {
+      id,
+    };
 
     if (!isSuperAdmin) {
-      whereClause.tenantId = req.user!.tenantId;
+      whereClause.tenantId =
+        req.user!.tenantId;
     }
 
     const user = await prisma.user.findFirst({
@@ -177,32 +185,76 @@ export const updateUserRole = async (req: Request, res: Response) => {
       });
     }
 
-    // 🚨 RULE: only super admin can promote to SACCO_ADMIN
-    if (role === "SACCO_ADMIN" && !isSuperAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: "Only SUPER_ADMIN can promote to SACCO_ADMIN",
-      });
-    }
-
-    // optional rule: prevent promoting super admins
+    // Cannot modify SUPER_ADMIN accounts
     if (user.role === "SUPER_ADMIN") {
       return res.status(400).json({
         success: false,
-        message: "Cannot modify SUPER_ADMIN role",
+        message:
+          "Cannot modify SUPER_ADMIN role",
       });
     }
 
-    const updated = await prisma.user.update({
-      where: { id },
-      data: {
-        role,
-      },
-    });
+    // Only SUPER_ADMIN can create/promote SACCO_ADMIN
+    if (
+      role === "SACCO_ADMIN" &&
+      !isSuperAdmin
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Only SUPER_ADMIN can assign SACCO_ADMIN role",
+      });
+    }
+
+    // Nobody except SUPER_ADMIN can assign SUPER_ADMIN
+    if (
+      role === "SUPER_ADMIN" &&
+      !isSuperAdmin
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Only SUPER_ADMIN can assign SUPER_ADMIN role",
+      });
+    }
+
+    // DIRECTOR restrictions
+    if (actorRole === "DIRECTOR") {
+      const allowedRoles = [
+        "STAGE_MARSHAL",
+        "VEHICLE_OWNER",
+        "DRIVER",
+        "CONDUCTOR",
+      ];
+
+      if (!allowedRoles.includes(role)) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Directors can only assign operational roles",
+        });
+      }
+    }
+
+    // MANAGER cannot assign roles
+    if (actorRole === "MANAGER") {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Managers are not allowed to assign roles",
+      });
+    }
+
+    const updated =
+      await prisma.user.update({
+        where: { id },
+        data: { role },
+      });
 
     return res.status(200).json({
       success: true,
-      message: "User role updated successfully",
+      message:
+        "User role updated successfully",
       data: updated,
     });
   } catch (error) {
@@ -210,7 +262,8 @@ export const updateUserRole = async (req: Request, res: Response) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to update user role",
+      message:
+        "Failed to update user role",
     });
   }
 };

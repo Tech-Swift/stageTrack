@@ -23,9 +23,16 @@ export const TENANT_ADMIN_ROLES = [
   UserRole.MANAGER,
 ];
 
-export const USER_MANAGEMENT_ROLES = [
+export const USER_STATUS_ROLES = [
   UserRole.SUPER_ADMIN,
   UserRole.SACCO_ADMIN,
+  UserRole.DIRECTOR,
+];
+
+export const ROLE_ASSIGNMENT_ROLES = [
+  UserRole.SUPER_ADMIN,
+  UserRole.SACCO_ADMIN,
+  UserRole.DIRECTOR,
 ];
 
 export const VEHICLE_APPROVAL_ROLES = [
