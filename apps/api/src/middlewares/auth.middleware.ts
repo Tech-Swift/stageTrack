@@ -26,7 +26,6 @@ export const authenticate = (
       token,
       process.env.JWT_SECRET!
     ) as any;
-
     const user: AuthUser ={
       userId: decoded.userId,
       tenantId: decoded.tenantId,

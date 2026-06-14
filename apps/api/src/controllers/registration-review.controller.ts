@@ -101,6 +101,14 @@ export const approveRegistration = async (
       return;
     }
 
+    if (request.status === "APPROVED") {
+      res.status(200).json({
+        success: true,
+        message: "Request already approved",
+      });
+      return;
+    }
+
     if (request.status !== "PENDING") {
       res.status(400).json({
         success: false,
@@ -108,38 +116,33 @@ export const approveRegistration = async (
       });
       return;
     }
+    
 
-    const existingUser =
-      await prisma.user.findUnique({
-        where: {
-          email: request.email,
-        },
-      });
-
-    if (existingUser) {
-      res.status(409).json({
-        success: false,
-        message: "User already exists",
-      });
-      return;
-    }
-
-    const result = await prisma.$transaction(async (tx) => {
-
-      const user = await tx.user.upsert({
+        const result = await prisma.$transaction(async (tx) => {
+      // 3. Create or fetch user
+      const existingUser = await tx.user.findUnique({
         where: { email: request.email },
+      });
+
+      const user =
+        existingUser ??
+        (await tx.user.upsert({
+          where: { email: request.email },
+          update: {},
+          create: {
+            tenantId: request.tenantId,
+            name: `${request.firstName} ${request.lastName}`,
+            email: request.email,
+            role: request.role,
+            accountStatus: "PENDING_SETUP",
+          },
+        }));
+
+      // 4. Ensure profile exists
+      await tx.userProfile.upsert({
+        where: { userId: user.id },
         update: {},
         create: {
-          tenantId: request.tenantId,
-          name: `${request.firstName} ${request.lastName}`,
-          email: request.email,
-          role: request.role,
-          accountStatus: "PENDING_SETUP",
-        },
-      });
-
-      await tx.userProfile.create({
-        data: {
           userId: user.id,
           firstName: request.firstName,
           lastName: request.lastName,
@@ -153,28 +156,40 @@ export const approveRegistration = async (
         },
       });
 
+      // 5. Generate setup token
       const token = crypto.randomBytes(32).toString("hex");
 
-      await tx.passwordSetupToken.create({
-        data: {
+      const tokenRecord = await tx.passwordSetupToken.upsert({
+        where: { userId: user.id },
+        update: {
+          token,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          used: false,
+        },
+        create: {
           userId: user.id,
           token,
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          used: false,
         },
       });
 
-      console.log("Deleting registration request with id:", id);
-      console.log("PARAM ID:", req.params.id);
-      await tx.registrationRequest.delete({
+      // 6. APPROVE REQUEST EARLY (CRITICAL FIX)
+      await tx.registrationRequest.update({
         where: { id: request.id },
+        data: {
+          status: "APPROVED",
+          approvedById: req.user!.userId,
+          approvedAt: new Date(),
+        },
       });
 
+      // 7. Return data
       return { user, token };
     });
-
     res.status(200).json({
       success: true,
-      message: "Request approved",
+      message: "Request approved successfully",
       tenant: {
         code: request.tenant.code,
         name: request.tenant.name,

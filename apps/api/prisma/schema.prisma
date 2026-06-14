@@ -67,7 +67,7 @@ model RegistrationRequest {
 model PasswordSetupToken {
   id String @id @default(cuid())
 
-  userId String
+  userId String @unique
   user   User   @relation(fields: [userId], references: [id])
 
   token String @unique
@@ -101,6 +101,18 @@ model User {
   registrationRequests RegistrationRequest[]
   approvedRequests     RegistrationRequest[] @relation("RegistrationApprovedBy")
   rejectedRequests     RegistrationRequest[] @relation("RegistrationRejectedBy")
+}
+
+model RolePolicy {
+  id        String   @id @default(cuid())
+
+  actorRole UserRole   // who is performing action
+  fromRole  UserRole   // current role of target
+  toRole    UserRole   // new role being assigned
+
+  action    String   @default("ROLE_CHANGE")
+
+  createdAt DateTime @default(now())
 }
 
 model UserProfile {

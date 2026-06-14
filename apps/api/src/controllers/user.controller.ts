@@ -153,3 +153,65 @@ export const updateUserStatus = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const updateUserRole = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const { role } = req.body;
+
+    const isSuperAdmin = req.user!.role === "SUPER_ADMIN";
+
+    const whereClause: any = { id };
+
+    if (!isSuperAdmin) {
+      whereClause.tenantId = req.user!.tenantId;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: whereClause,
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // 🚨 RULE: only super admin can promote to SACCO_ADMIN
+    if (role === "SACCO_ADMIN" && !isSuperAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Only SUPER_ADMIN can promote to SACCO_ADMIN",
+      });
+    }
+
+    // optional rule: prevent promoting super admins
+    if (user.role === "SUPER_ADMIN") {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot modify SUPER_ADMIN role",
+      });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id },
+      data: {
+        role,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "User role updated successfully",
+      data: updated,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update user role",
+    });
+  }
+};
