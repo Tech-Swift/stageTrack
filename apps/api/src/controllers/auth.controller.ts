@@ -3,18 +3,15 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { generateToken } from "../utils/jwt";
 import { prisma } from "../lib/prisma";
+import { userActivationService } from "../services/userActivation.service";
 
 export const setPassword = async (
     req: Request,
     res: Response
 ): Promise<void> => {
-    try {
-        const {
-            token,
-            password,confirmPassword,
-        } = req.body;
-
-        if(!token) {
+      try {
+        const { token, password, confirmPassword } = req.body;
+        if (!token) {
             res.status(400).json({
                 success: false,
                 message: "Token is required",
@@ -22,31 +19,20 @@ export const setPassword = async (
             return;
         }
 
-        if(password!== confirmPassword) {
+        if (!password || password !== confirmPassword) {
             res.status(400).json({
                 success: false,
-                message: "Password and confirmation required",
+                message: "Passwords do not match",
             });
             return;
         }
-
-        if(password !== confirmPassword) {
-            res.status(400).json({
-                success: false,
-                message: "Password do not match",
-            });
-            return;
-        }
+        
         const setUpToken = await prisma.passwordSetupToken.findUnique({
-            where: {
-                token,
-            },
-            include: {
-                user: true
-            },
+            where: { token },
+            include: { user: true },
         });
 
-        if (!setUpToken){
+        if (!setUpToken) {
             res.status(404).json({
                 success: false,
                 message: "Invalid setup token",
@@ -54,7 +40,7 @@ export const setPassword = async (
             return;
         }
 
-        if(setUpToken.used) {
+        if (setUpToken.used) {
             res.status(400).json({
                 success: false,
                 message: "Token already used",
@@ -62,7 +48,7 @@ export const setPassword = async (
             return;
         }
 
-        if(setUpToken.expiresAt < new Date()){
+        if (setUpToken.expiresAt < new Date()) {
             res.status(400).json({
                 success: false,
                 message: "Token expired",
@@ -70,37 +56,34 @@ export const setPassword = async (
             return;
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = setUpToken.user;
 
-        await prisma.user.update({
-            where: {
-                id: setUpToken.userId,
-            },
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const updatedUser = await prisma.user.update({
+            where: { id: user.id },
             data: {
                 password: hashedPassword,
                 accountStatus: "ACTIVE",
             },
         });
-
         await prisma.passwordSetupToken.update({
-            where: {
-                id: setUpToken.id,
-            },
-            data: {
-                used: true,
-            },
+            where: { id: setUpToken.id },
+            data: { used: true },
         });
+
+        await userActivationService.activateRoleEntities(updatedUser);
 
         res.status(200).json({
             success: true,
             message: "Password set successfully. You can now login.",
         });
+
     } catch (error) {
         console.error(error);
 
         res.status(500).json({
             success: false,
-            message: "Failed to set password"
+            message: "Failed to set password",
         });
     }
 };

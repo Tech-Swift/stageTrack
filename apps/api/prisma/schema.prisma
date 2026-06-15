@@ -22,6 +22,9 @@ model Tenant {
   users                User[]
   vehicles             Vehicle[]
   vehicleOwners        VehicleOwner[]
+  drivers              Driver[]
+  conductors           Conductor[]
+  stageMarshals        StageMarshal[]
 }
 
 model RegistrationRequest {
@@ -88,6 +91,9 @@ model User {
   role                UserRole
   profile             UserProfile?
   vehicleOwner        VehicleOwner?
+  driver              Driver?
+  conductor           Conductor?
+  stageMarshal        StageMarshal?
   accountStatus       AccountStatus        @default(PENDING_SETUP)
   setupTokens         PasswordSetupToken[]
   resetTokens         PasswordResetToken[]
@@ -104,13 +110,13 @@ model User {
 }
 
 model RolePolicy {
-  id        String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  actorRole UserRole   // who is performing action
-  fromRole  UserRole   // current role of target
-  toRole    UserRole   // new role being assigned
+  actorRole UserRole // who is performing action
+  fromRole  UserRole // current role of target
+  toRole    UserRole // new role being assigned
 
-  action    String   @default("ROLE_CHANGE")
+  action String @default("ROLE_CHANGE")
 
   createdAt DateTime @default(now())
 }
@@ -129,12 +135,6 @@ model UserProfile {
   profileImageUrl String?
 
   goodConductUrl String?
-
-  licenceUrl String?
-
-  badgeUrl String?
-
-  vehicleLogbookUrl String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -186,10 +186,56 @@ model VehicleOwner {
 
   vehicles Vehicle[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  vehicleLogbookUrl String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
+}
+
+model Driver {
+  id String @id @default(cuid())
+
+  userId   String @unique
+  tenantId String
+
+  licenceUrl String?
+
+  user   User   @relation(fields: [userId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Conductor {
+  id String @id @default(cuid())
+
+  userId   String @unique
+  tenantId String
+
+  badgeUrl String?
+
+  user   User   @relation(fields: [userId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StageMarshal {
+  id String @id @default(cuid())
+
+  userId   String @unique
+  tenantId String
+
+  assignedStage String?
+
+  user   User   @relation(fields: [userId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Vehicle {
@@ -199,23 +245,24 @@ model Vehicle {
   ownerId String
   owner   VehicleOwner @relation(fields: [ownerId], references: [id])
 
+  logbookUrl         String?
   registrationNumber String
   plateNumber        String
   capacity           Int?
 
   status VehicleStatus @default(PENDING_APPROVAL)
 
-  arrivals        Arrival[]
-  dispatches      Dispatch[]
-  inspectionDate  DateTime?
-  inspectionNotes String?
-  inspectionById  String?
-  approvedById    String?
-  approvedAt      DateTime?
-  suspendedById   String?
-  suspendedAt     DateTime?
-  suspensionReason  String?
-  rejectionReason String?
+  arrivals         Arrival[]
+  dispatches       Dispatch[]
+  inspectionDate   DateTime?
+  inspectionNotes  String?
+  inspectionById   String?
+  approvedById     String?
+  approvedAt       DateTime?
+  suspendedById    String?
+  suspendedAt      DateTime?
+  suspensionReason String?
+  rejectionReason  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -4,39 +4,89 @@ import { VehicleStatus } from "@prisma/client";
 
 export const registerVehicle = async (req: Request, res: Response) => {
   try {
-    const { userId, tenantId } = req.user!;
-    const { registrationNumber, plateNumber, capacity } = req.body;
+    const { userId, role } = req.user!;
+    const { tenantId: bodyTenantId, registrationNumber, plateNumber, capacity, ownerUserId } = req.body;
 
-    const owner = await prisma.vehicleOwner.findUnique({
-      where: { userId },
-    });
+    // 1. Resolve tenant context
+    const tenantId =
+      role === "SUPER_ADMIN"
+        ? bodyTenantId
+        : req.user!.tenantId;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "Tenant context is required",
+      });
+    }
+
+    // 2. Resolve VehicleOwner (MANDATORY because ownerId is REQUIRED in schema)
+    let owner;
+
+    if (role === "SUPER_ADMIN") {
+      // SUPER_ADMIN must explicitly specify whose vehicle this is
+      if (!ownerUserId) {
+        return res.status(400).json({
+          success: false,
+          message: "ownerUserId is required for super admin vehicle creation",
+        });
+      }
+
+      owner = await prisma.vehicleOwner.findUnique({
+        where: { userId: ownerUserId },
+      });
+    } else {
+      owner = await prisma.vehicleOwner.findUnique({
+        where: { userId },
+      });
+    }
 
     if (!owner) {
       return res.status(403).json({
         success: false,
-        message: "Only vehicle owners can register vehicles",
+        message: "Vehicle owner not found",
       });
     }
 
-    const vehicle = await prisma.vehicle.create({
-      data: {
-        tenantId: owner.tenantId,
-        ownerId: owner.id,
-        registrationNumber,
-        plateNumber,
-        capacity,
-        status: VehicleStatus.PENDING_APPROVAL,
+    // 3. Prevent duplicates
+    const existingVehicle = await prisma.vehicle.findFirst({
+      where: {
+        OR: [
+          { plateNumber },
+          { registrationNumber },
+        ],
       },
     });
 
-    res.status(201).json({
+    if (existingVehicle) {
+      return res.status(409).json({
+        success: false,
+        message: "Vehicle already exists with same plate or registration number",
+      });
+    }
+
+    // 4. Create vehicle (NO NULLS EVER)
+    const vehicle = await prisma.vehicle.create({
+      data: {
+        tenantId,
+        ownerId: owner.id, // ALWAYS REQUIRED
+        registrationNumber,
+        plateNumber,
+        capacity: capacity ? Number(capacity) : null,
+        status: "PENDING_APPROVAL",
+      },
+    });
+
+    return res.status(201).json({
       success: true,
       message: "Vehicle submitted for approval",
       data: vehicle,
     });
+
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+
+    return res.status(500).json({
       success: false,
       message: "Vehicle registration failed",
     });
