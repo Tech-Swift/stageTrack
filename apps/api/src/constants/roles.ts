@@ -35,7 +35,14 @@ export const ROLE_ASSIGNMENT_ROLES = [
   UserRole.DIRECTOR,
 ];
 
-export const VEHICLE_APPROVAL_ROLES = [
+export const VEHICLE_REVIEW_ROLES = [
+  UserRole.SUPER_ADMIN,
   UserRole.SACCO_ADMIN,
   UserRole.MANAGER,
+]
+
+export const VEHICLE_APPROVAL_ROLES = [
+  UserRole.SUPER_ADMIN,
+  UserRole.SACCO_ADMIN,
+  UserRole.DIRECTOR,
 ];

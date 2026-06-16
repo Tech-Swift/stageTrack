@@ -16,51 +16,76 @@ import {
 } from "../controllers/vehicle.controller";
 
 import {
-  SYSTEM_ADMIN_ROLES,
-  TENANT_ADMIN_ROLES,
+  VEHICLE_REVIEW_ROLES,
   VEHICLE_APPROVAL_ROLES,
 } from "../constants/roles";
 
 const router = Router();
 
-// Vehicle owner registers vehicle
+/**
+ * Vehicle Owner registers vehicle
+ */
 router.post(
   "/",
   authenticate,
   registerVehicle
 );
 
-// List vehicles
+/**
+ * List vehicles
+ */
 router.get(
   "/",
   authenticate,
   getVehicles
 );
 
-// Get single vehicle
+/**
+ * Get single vehicle
+ */
 router.get(
   "/:id",
   authenticate,
   getVehicleById
 );
 
-// Schedule inspection
+/**
+ * Schedule inspection
+ * SUPER_ADMIN, SACCO_ADMIN, MANAGER
+ */
 router.patch(
   "/:id/schedule-inspection",
   authenticate,
-  authorize(...TENANT_ADMIN_ROLES),
+  authorize(...VEHICLE_REVIEW_ROLES),
   scheduleInspection
 );
 
-// Inspection completed
+/**
+ * Mark inspection complete
+ * SUPER_ADMIN, SACCO_ADMIN, MANAGER
+ */
 router.patch(
   "/:id/mark-inspected",
   authenticate,
-  authorize(...TENANT_ADMIN_ROLES),
+  authorize(...VEHICLE_REVIEW_ROLES),
   markInspected
 );
 
-// Approve vehicle
+/**
+ * Reject vehicle
+ * SUPER_ADMIN, SACCO_ADMIN, MANAGER
+ */
+router.patch(
+  "/:id/reject",
+  authenticate,
+  authorize(...VEHICLE_REVIEW_ROLES),
+  rejectVehicle
+);
+
+/**
+ * Approve vehicle
+ * SUPER_ADMIN, SACCO_ADMIN, DIRECTOR
+ */
 router.patch(
   "/:id/approve",
   authenticate,
@@ -68,7 +93,10 @@ router.patch(
   approveVehicle
 );
 
-// Activate vehicle
+/**
+ * Activate vehicle
+ * SUPER_ADMIN, SACCO_ADMIN, DIRECTOR
+ */
 router.patch(
   "/:id/activate",
   authenticate,
@@ -76,33 +104,25 @@ router.patch(
   activateVehicle
 );
 
-// Reject vehicle
-router.patch(
-  "/:id/reject",
-  authenticate,
-  authorize(...TENANT_ADMIN_ROLES),
-  rejectVehicle
-);
-
-// Suspend vehicle
+/**
+ * Suspend vehicle
+ * SUPER_ADMIN, SACCO_ADMIN, DIRECTOR
+ */
 router.patch(
   "/:id/suspend",
   authenticate,
-  authorize(
-    ...TENANT_ADMIN_ROLES,
-    ...SYSTEM_ADMIN_ROLES
-  ),
+  authorize(...VEHICLE_APPROVAL_ROLES),
   suspendVehicle
 );
 
-// Reactivate vehicle
+/**
+ * Reactivate vehicle
+ * SUPER_ADMIN, SACCO_ADMIN, DIRECTOR
+ */
 router.patch(
   "/:id/reactivate",
   authenticate,
-  authorize(
-    ...TENANT_ADMIN_ROLES,
-    ...SYSTEM_ADMIN_ROLES
-  ),
+  authorize(...VEHICLE_APPROVAL_ROLES),
   reactivateVehicle
 );
 

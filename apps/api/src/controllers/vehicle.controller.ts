@@ -111,17 +111,27 @@ export const scheduleInspection = async (req: Request, res: Response) => {
     }
 
     // tenant isolation
-    if (vehicle.tenantId !== user.tenantId && user.role !== "SUPER_ADMIN") {
+    if (
+      vehicle.tenantId !== user.tenantId &&
+      user.role !== "SUPER_ADMIN"
+    ) {
       return res.status(403).json({
         success: false,
         message: "Not allowed for this tenant",
       });
     }
 
-    if (vehicle.status !== "PENDING_APPROVAL") {
+    // ONLY allow scheduling from valid states
+    const allowedStatuses: VehicleStatus[] = [
+      VehicleStatus.PENDING_APPROVAL,
+      VehicleStatus.INSPECTION_SCHEDULED,
+    ];
+
+    if (!allowedStatuses.includes(vehicle.status)) {
       return res.status(400).json({
         success: false,
-        message: "Vehicle not in pending state",
+        message:
+          "Vehicle cannot be scheduled for inspection at its current stage",
       });
     }
 
@@ -129,20 +139,22 @@ export const scheduleInspection = async (req: Request, res: Response) => {
       where: { id: vehicleId },
       data: {
         status: VehicleStatus.INSPECTION_SCHEDULED,
-        inspectionDate: inspectionDate ? new Date(inspectionDate) : null,
-        inspectionNotes,
+        inspectionDate: inspectionDate
+          ? new Date(inspectionDate)
+          : null,
+        inspectionNotes: inspectionNotes ?? null,
         inspectionById: user.userId,
       },
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: "Inspection scheduled successfully",
       data: updated,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to schedule inspection",
     });
@@ -165,7 +177,7 @@ export const markInspected = async (req: Request, res: Response) => {
       });
     }
 
-    if (vehicle.status !== "INSPECTION_SCHEDULED") {
+    if (vehicle.status !== VehicleStatus.INSPECTION_SCHEDULED) {
       return res.status(400).json({
         success: false,
         message: "Inspection not scheduled",
@@ -176,6 +188,9 @@ export const markInspected = async (req: Request, res: Response) => {
       where: { id: vehicleId },
       data: {
         status: VehicleStatus.INSPECTED,
+
+        // ✔ use existing field
+        inspectionById: user.userId,
       },
     });
 
