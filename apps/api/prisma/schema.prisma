@@ -390,7 +390,7 @@ enum VehicleStatus {
 
 enum CrewAssignmentStatus {
   ACTIVE
-  REMOVED
+  INACTIVE
   SUSPENDED
 }
 
