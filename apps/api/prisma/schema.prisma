@@ -25,6 +25,8 @@ model Tenant {
   drivers              Driver[]
   conductors           Conductor[]
   stageMarshals        StageMarshal[]
+  vehicleCrews         VehicleCrew[]
+
 }
 
 model RegistrationRequest {
@@ -201,6 +203,8 @@ model Driver {
 
   licenceUrl String?
 
+  vehicleCrews VehicleCrew[]
+
   user   User   @relation(fields: [userId], references: [id])
   tenant Tenant @relation(fields: [tenantId], references: [id])
 
@@ -215,6 +219,8 @@ model Conductor {
   tenantId String
 
   badgeUrl String?
+
+  vehicleCrews VehicleCrew[]
 
   user   User   @relation(fields: [userId], references: [id])
   tenant Tenant @relation(fields: [tenantId], references: [id])
@@ -252,6 +258,7 @@ model Vehicle {
 
   status VehicleStatus @default(PENDING_APPROVAL)
 
+  vehicleCrews     VehicleCrew[]
   arrivals         Arrival[]
   dispatches       Dispatch[]
   inspectionDate   DateTime?
@@ -268,6 +275,40 @@ model Vehicle {
   updatedAt DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
+}
+
+model VehicleCrew {
+  id String @id @default(cuid())
+
+  tenantId String
+
+  vehicleId String
+  driverId String
+  conductorId String?
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+  driver Driver @relation(fields: [driverId], references: [id])
+  conductor Conductor? @relation(fields: [conductorId], references: [id])
+
+  status CrewAssignmentStatus @default(ACTIVE)
+
+  assignedAt DateTime @default(now())
+  removedAt DateTime?
+
+  assignedById String?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([conductorId])
+  @@index([status])
 }
 
 model Arrival {
@@ -345,6 +386,12 @@ enum VehicleStatus {
   ACTIVE
   SUSPENDED
   REJECTED
+}
+
+enum CrewAssignmentStatus {
+  ACTIVE
+  REMOVED
+  SUSPENDED
 }
 
 enum ArrivalStatus {
