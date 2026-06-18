@@ -5,7 +5,8 @@ import {
     getVehicleCrew,
     deactivateCrew,
     getAvailableDrivers,
-    getAvailableConductors
+    getAvailableConductors,
+    getVehicleCrewHistory
 } from "../controllers/crew.controller";
 
 import { authenticate } from "../middlewares/auth.middleware";
@@ -38,6 +39,12 @@ router.get(
   "/conductors/available",
   authenticate,
   getAvailableConductors
+)
+
+router.get(
+  "/:vehicleId/history",
+  authenticate,
+  getVehicleCrewHistory
 )
 
 router.patch(

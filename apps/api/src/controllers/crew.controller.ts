@@ -333,6 +333,67 @@ export const getAvailableConductors = async (
   }
 };
 
+export const getVehicleCrewHistory = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const user = req.user as AuthUser;
+
+    const isSuperAdmin = user.role === "SUPER_ADMIN";
+
+    if (!isSuperAdmin && !user.tenantId) {
+      res.status(400).json({
+        success: false,
+        message: "Tenant is required",
+      });
+      return;
+    }
+
+    const { vehicleId } = req.query;
+
+    // 1. Tenant scope
+    const tenantScope = isSuperAdmin
+      ? {}
+      : { tenantId: user.tenantId! };
+
+    // 2. Build filters
+    const whereClause: any = {
+      ...tenantScope,
+    };
+
+    if (vehicleId) {
+      whereClause.vehicleId = String(vehicleId);
+    }
+
+    // 3. Fetch history
+    const history = await prisma.vehicleCrew.findMany({
+      where: whereClause,
+      include: {
+        vehicle: true,
+        driver: true,
+        conductor: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      count: history.length,
+      data: history,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch vehicle crew history",
+    });
+  }
+};
+
 export const deactivateCrew = async (
   req: Request,
   res: Response
