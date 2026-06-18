@@ -293,9 +293,10 @@ model VehicleCrew {
   status CrewAssignmentStatus @default(ACTIVE)
 
   assignedAt DateTime @default(now())
-  removedAt DateTime?
+  endedAt       DateTime?
 
-  assignedById String?
+  assignedById  String?
+  endedById     String?
 
   notes String?
 
