@@ -52,3 +52,9 @@ export const CREW_ASSIGNMENT_ROLES = [
   UserRole.SACCO_ADMIN,
   UserRole.MANAGER,
 ];
+
+export const ROUTES_CREATION_ROLES = [
+  UserRole.SUPER_ADMIN,
+  UserRole.SACCO_ADMIN,
+  UserRole.DIRECTOR
+]
