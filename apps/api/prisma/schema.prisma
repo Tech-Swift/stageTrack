@@ -26,6 +26,7 @@ model Tenant {
   conductors           Conductor[]
   stageMarshals        StageMarshal[]
   vehicleCrews         VehicleCrew[]
+  stageAssignment      StageAssignment[]
 }
 
 model RegistrationRequest {
@@ -98,6 +99,7 @@ model User {
   accountStatus       AccountStatus        @default(PENDING_SETUP)
   setupTokens         PasswordSetupToken[]
   resetTokens         PasswordResetToken[]
+  StageAssignment     StageAssignment[]
   lastLoginAt         DateTime?
   failedLoginAttempts Int                  @default(0)
   lockedUntil         DateTime?
@@ -196,6 +198,7 @@ model Stage {
 
   arrivals   Arrival[]
   dispatches Dispatch[]
+  assignments       StageAssignment[]
 
   isActive Boolean @default(true)
 
@@ -273,6 +276,33 @@ model StageMarshal {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model StageAssignment {
+  id String @id @default(cuid())
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  userId String
+  stageId String
+
+  user  User  @relation(fields: [userId], references: [id])
+  stage Stage @relation(fields: [stageId], references: [id])
+
+
+  startDate   DateTime
+  endDate     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([stageId])
+  @@index([startDate])
+
+  @@unique([tenantId, userId, stageId, startDate])
 }
 
 model Vehicle {

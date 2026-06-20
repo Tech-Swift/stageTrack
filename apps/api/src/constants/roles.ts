@@ -64,3 +64,9 @@ export const STAGE_CREATION_ROLES = [
   UserRole.SACCO_ADMIN,
   UserRole.DIRECTOR
 ]
+
+export const MARSHALL_ASSIGNMENT_ROLES = [
+  UserRole.SUPER_ADMIN,
+  UserRole.SACCO_ADMIN,
+  UserRole.MANAGER
+]

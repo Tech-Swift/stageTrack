@@ -8,6 +8,7 @@ import vehicleRoutes from "./routes/vehicle.routes";
 import crewRoutes from "./routes/crew.routes";
 import routeRoutes from "./routes/route.routes";
 import stageRoutes from "./routes/stage.routes";
+import assignmentRoutes from "./routes/assignment.routes";
 
 const app = express();
 app.use(express.json());
@@ -28,6 +29,7 @@ app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/crews", crewRoutes);
 app.use("/api/routes", routeRoutes);
 app.use("/api/stages", stageRoutes);
+app.use("/api/assignment", assignmentRoutes);
 
 
 export default app;
