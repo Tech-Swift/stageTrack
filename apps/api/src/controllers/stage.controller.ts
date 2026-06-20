@@ -119,7 +119,7 @@ export const getRouteStages = async (
   }
 
   console.log("PARAMS:", req.params);
-  
+
   let tenantId = user.tenantId;
 
   if (user.role === "SUPER_ADMIN") {
@@ -311,5 +311,71 @@ export const updateStage = async (
     success: true,
     message: "Stage updated successfully",
     data: updatedStage,
+  });
+};
+
+export const deactivateStage = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const user = req.user;
+
+  if (!user) {
+    res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+    return;
+  }
+
+  const stageId = getParam(req, "id");
+
+  if (!stageId) {
+    res.status(400).json({
+      success: false,
+      message: "Invalid stage id",
+    });
+    return;
+  }
+
+  // 🔥 Fetch stage first
+  const stage = await prisma.stage.findFirst({
+    where: {
+      id: stageId,
+    },
+  });
+
+  if (!stage) {
+    res.status(404).json({
+      success: false,
+      message: "Stage not found",
+    });
+    return;
+  }
+
+  // 🔐 Tenant access control
+  if (user.role !== "SUPER_ADMIN") {
+    if (stage.tenantId !== user.tenantId) {
+      res.status(403).json({
+        success: false,
+        message: "Forbidden",
+      });
+      return;
+    }
+  }
+
+  // 🔥 Soft delete (deactivate)
+  await prisma.stage.update({
+    where: {
+      id: stageId,
+    },
+    data: {
+      isActive: false,
+    },
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Stage deactivated successfully",
   });
 };
