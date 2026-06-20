@@ -8,6 +8,10 @@ import {
     deactivateRoute
 } from "../controllers/routes.controller";
 
+import {
+  getRouteStages
+} from "../controllers/stage.controller";
+
 import { authenticate } from "../middlewares/auth.middleware";
 import { authorize } from "../middlewares/authorize.middleware";
 import { ROUTES_CREATION_ROLES } from "../constants/roles";
@@ -25,6 +29,12 @@ router.get(
     "/",
     authenticate,
     getRoutes
+)
+
+router.get(
+  "/:routeId/stages",
+  authenticate,
+  getRouteStages
 )
 
 router.get(

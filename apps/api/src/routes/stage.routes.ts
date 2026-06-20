@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
     createStage,
     getStageById,
-    getStages,
+    updateStage,
 } from "../controllers/stage.controller";
 
 import { authenticate } from "../middlewares/auth.middleware";
@@ -23,11 +23,11 @@ router.get(
     authenticate,
     getStageById
 )
-
-router.get(
-    "/:routeId",
+router.put(
+    "/:id",
     authenticate,
-    getStages
+    authorize(...STAGE_CREATION_ROLES),
+    updateStage
 )
 
 export default router;

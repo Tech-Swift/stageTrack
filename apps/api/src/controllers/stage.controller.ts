@@ -94,7 +94,7 @@ export const createStage = async (
   });
 };
 
-export const getStages = async (
+export const getRouteStages = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -118,6 +118,8 @@ export const getStages = async (
     return;
   }
 
+  console.log("PARAMS:", req.params);
+  
   let tenantId = user.tenantId;
 
   if (user.role === "SUPER_ADMIN") {
@@ -216,5 +218,98 @@ export const getStageById = async (
   res.status(200).json({
     success: true,
     data: stage,
+  });
+};
+
+export const updateStage = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const user = req.user;
+
+  if (!user) {
+    res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+    return;
+  }
+
+  const stageId = getParam(req, "id");
+
+  if (!stageId) {
+    res.status(400).json({
+      success: false,
+      message: "Invalid stage id",
+    });
+    return;
+  }
+
+  // 🔥 FETCH STAGE FIRST
+  const stage = await prisma.stage.findFirst({
+    where: {
+      id: stageId,
+    },
+  });
+
+  if (!stage) {
+    res.status(404).json({
+      success: false,
+      message: "Stage not found",
+    });
+    return;
+  }
+
+  // 🔐 TENANT ACCESS CONTROL
+  if (user.role !== "SUPER_ADMIN") {
+    if (stage.tenantId !== user.tenantId) {
+      res.status(403).json({
+        success: false,
+        message: "Forbidden",
+      });
+      return;
+    }
+  }
+
+  const { name, stageNumber } = req.body;
+
+  // 🔥 CHECK DUPLICATE stageNumber (if updating)
+  if (stageNumber !== undefined) {
+    const existing = await prisma.stage.findFirst({
+      where: {
+        routeId: stage.routeId,
+        stageNumber,
+        NOT: {
+          id: stageId,
+        },
+      },
+    });
+
+    if (existing) {
+      res.status(400).json({
+        success: false,
+        message: "Stage number already exists",
+      });
+      return;
+    }
+  }
+
+  // 🔥 CLEAN UPDATE DATA (avoid overwriting with undefined)
+  const data: any = {};
+
+  if (name !== undefined) data.name = name;
+  if (stageNumber !== undefined) data.stageNumber = stageNumber;
+
+  const updatedStage = await prisma.stage.update({
+    where: {
+      id: stageId,
+    },
+    data,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Stage updated successfully",
+    data: updatedStage,
   });
 };
