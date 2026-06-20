@@ -6,7 +6,8 @@ import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
 import vehicleRoutes from "./routes/vehicle.routes";
 import crewRoutes from "./routes/crew.routes";
-import routeRoutes from "./routes/route.routes"
+import routeRoutes from "./routes/route.routes";
+import stageRoutes from "./routes/stage.routes";
 
 const app = express();
 app.use(express.json());
@@ -26,6 +27,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/crews", crewRoutes);
 app.use("/api/routes", routeRoutes);
+app.use("/api/stages", stageRoutes);
 
 
 export default app;

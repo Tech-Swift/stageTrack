@@ -182,17 +182,32 @@ model Route {
 }
 
 model Stage {
-  id         String     @id @default(cuid())
-  tenantId   String
-  routeId    String
-  name       String
-  order      Int
+  id String @id @default(cuid())
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  routeId String
+  route   Route  @relation(fields: [routeId], references: [id])
+
+  name String
+
+  stageNumber Int
+
   arrivals   Arrival[]
   dispatches Dispatch[]
-  route      Route      @relation(fields: [routeId], references: [id])
-  tenant     Tenant     @relation(fields: [tenantId], references: [id])
 
-  @@unique([routeId, order])
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Prevent duplicate stage numbers in the same route
+  @@unique([routeId, stageNumber])
+  // Prevent duplicate stage names in the same route
+  @@unique([routeId, name])
+  @@index([tenantId])
+  @@index([routeId])
 }
 
 model VehicleOwner {

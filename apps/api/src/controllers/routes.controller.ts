@@ -276,7 +276,7 @@ export const getRouteById = async (
     include: {
       stages: {
         orderBy: {
-          order: "asc",
+          stageNumber: "asc",
         },
       },
       dispatches: true,

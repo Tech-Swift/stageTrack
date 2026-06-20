@@ -58,3 +58,9 @@ export const ROUTES_CREATION_ROLES = [
   UserRole.SACCO_ADMIN,
   UserRole.DIRECTOR
 ]
+
+export const STAGE_CREATION_ROLES = [
+  UserRole.SUPER_ADMIN,
+  UserRole.SACCO_ADMIN,
+  UserRole.DIRECTOR
+]
