@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { 
     assignMarshalToStage,
-    getActiveMarshals,
     getMarshalAssignments
 } from "../controllers/assignment.controller";
 import { authenticate } from "../middlewares/auth.middleware";
@@ -18,12 +17,6 @@ router.post(
   assignMarshalToStage
 );
 
-router.get(
-  "/stages/:stageId/active-marshals",
-  authenticate,
-  authorize(...MARSHALL_ASSIGNMENT_ROLES),
-  getActiveMarshals
-);
 
 router.get(
   "/marshals/:userId/assignments",

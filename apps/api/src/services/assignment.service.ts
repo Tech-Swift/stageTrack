@@ -83,6 +83,29 @@ export const createStageAssignment = async (params: {
   });
 };
 
+export const getStageAssignmentsService = async (
+  tenantId: string,
+  stageId: string
+) => {
+  return prisma.stageAssignment.findMany({
+    where: {
+      tenantId,
+      stageId,
+    },
+    include: {
+      user: true,
+      stage: {
+        include: {
+          route: true,
+        },
+      },
+    },
+    orderBy: {
+      startDate: "desc",
+    },
+  });
+};
+
 export const getActiveMarshalsForStage = async (
   tenantId: string,
   stageId: string

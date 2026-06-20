@@ -6,6 +6,11 @@ import {
     deactivateStage
 } from "../controllers/stage.controller";
 
+import {
+    getActiveMarshals,
+    getStageAssignments
+} from "../controllers/assignment.controller";
+
 import { authenticate } from "../middlewares/auth.middleware";
 import { authorize } from "../middlewares/authorize.middleware";
 import { STAGE_CREATION_ROLES } from "../constants/roles";
@@ -23,6 +28,19 @@ router.get(
     "/:id",
     authenticate,
     getStageById
+)
+
+router.get(
+    "/:stageId/assignments",
+    authenticate,
+    authorize(...STAGE_CREATION_ROLES),
+    getStageAssignments
+)
+
+router.get(
+    "/:stageId/active-marshals",
+    authenticate,
+    getActiveMarshals
 )
 router.put(
     "/:id",

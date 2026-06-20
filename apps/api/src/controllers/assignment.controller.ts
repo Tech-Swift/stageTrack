@@ -2,8 +2,9 @@ import { Request, Response } from "express";
 import { assignMarshalSchema } from "../validators/assignment.validator";
 import { 
   createStageAssignment,
+  getStageAssignmentsService,
   getActiveMarshalsForStage,
-  getMarshalAssignmentsService
+  getMarshalAssignmentsService,
 } from "../services/assignment.service";
 import { getAssignmentStatus } from "../utils/assignment";
 import { getParam } from "../utils/http"
@@ -47,6 +48,71 @@ export const assignMarshalToStage = async (
     res.status(400).json({
       success: false,
       message: error.message || "Failed to assign marshal",
+    });
+  }
+};
+
+export const getStageAssignments = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    // -------------------------
+    // TENANT
+    // -------------------------
+    const tenantId = req.user?.tenantId;
+
+    if (!tenantId) {
+      res.status(400).json({
+        success: false,
+        message: "Tenant context missing",
+      });
+      return;
+    }
+
+    // -------------------------
+    // STAGE ID
+    // -------------------------
+    const stageId = getParam(req, "stageId");
+
+    if (!stageId) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid or missing stageId",
+      });
+      return;
+    }
+
+    // -------------------------
+    // FETCH DATA
+    // -------------------------
+    const assignments =
+      await getStageAssignmentsService(
+        tenantId,
+        stageId
+      );
+
+    // -------------------------
+    // ATTACH DYNAMIC STATUS
+    // -------------------------
+    const data = assignments.map((a) => ({
+      ...a,
+      status: getAssignmentStatus(a),
+    }));
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    console.error(
+      "getStageAssignments error:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch stage assignments",
     });
   }
 };
