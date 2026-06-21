@@ -11,6 +11,11 @@ import {
     getStageAssignments
 } from "../controllers/assignment.controller";
 
+import {
+    getStageQueue,
+    getNextVehicle
+} from "../controllers/queue.controller";
+
 import { authenticate } from "../middlewares/auth.middleware";
 import { authorize } from "../middlewares/authorize.middleware";
 import { STAGE_CREATION_ROLES } from "../constants/roles";
@@ -42,6 +47,19 @@ router.get(
     authenticate,
     getActiveMarshals
 )
+
+router.get(
+    "/:stageId/queue",
+    authenticate,
+    getStageQueue
+)
+
+router.get(
+  "/:stageId/queue/next",
+  authenticate,
+  getNextVehicle
+);
+
 router.put(
     "/:id",
     authenticate,
@@ -55,5 +73,7 @@ router.patch(
   authorize(...STAGE_CREATION_ROLES),
   deactivateStage
 );
+
+
 
 export default router;

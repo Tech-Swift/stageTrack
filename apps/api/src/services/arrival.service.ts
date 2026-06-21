@@ -29,20 +29,20 @@ export class ArrivalService {
       }
 
       if (assignments.length > 1) {
-        throw new Error(
-          "Marshal has multiple active stage assignments"
-        );
+        throw new Error("Marshal has multiple active stage assignments");
       }
 
       const stageId = assignments[0].stageId;
 
       // ----------------------------------------
-      // 2. GLOBAL VEHICLE LOCK
+      // 2. VEHICLE GLOBAL LOCK (LOADING + QUEUED)
       // ----------------------------------------
       const activeQueue = await tx.stageQueue.findFirst({
         where: {
           vehicleId,
-          status: "QUEUED",
+          status: {
+            in: ["LOADING", "QUEUED"],
+          },
         },
       });
 
@@ -53,7 +53,7 @@ export class ArrivalService {
       }
 
       // ----------------------------------------
-      // 3. CREATE ARRIVAL
+      // 3. CREATE ARRIVAL EVENT
       // ----------------------------------------
       const arrival = await tx.arrival.create({
         data: {
@@ -79,7 +79,19 @@ export class ArrivalService {
       });
 
       // ----------------------------------------
-      // 5. CREATE QUEUE ENTRY
+      // 5. CHECK IF ANY VEHICLE IS CURRENTLY LOADING
+      // ----------------------------------------
+      const loadingVehicle = await tx.stageQueue.findFirst({
+        where: {
+          stageId,
+          status: "LOADING",
+        },
+      });
+
+      const status = loadingVehicle ? "QUEUED" : "LOADING";
+
+      // ----------------------------------------
+      // 6. CREATE QUEUE ENTRY
       // ----------------------------------------
       const queueEntry = await tx.stageQueue.create({
         data: {
@@ -87,12 +99,12 @@ export class ArrivalService {
           vehicleId,
           arrivalId: arrival.id,
           position: counter.value,
-          status: "QUEUED",
+          status,
         },
       });
 
       // ----------------------------------------
-      // 6. LINK ARRIVAL ↔ QUEUE
+      // 7. LINK ARRIVAL ↔ QUEUE
       // ----------------------------------------
       const updatedArrival = await tx.arrival.update({
         where: { id: arrival.id },
@@ -101,10 +113,55 @@ export class ArrivalService {
         },
       });
 
+      // ----------------------------------------
+      // 8. RESPONSE
+      // ----------------------------------------
       return {
         arrival: updatedArrival,
         queue: queueEntry,
+        queueNumber: queueEntry.position,
+        message:
+          status === "LOADING"
+            ? "Vehicle is now loading passengers"
+            : `Vehicle queued at position ${queueEntry.position}`,
       };
+    });
+  }
+
+  // ----------------------------------------
+  // GET QUEUE FOR CURRENT MARSHAL STAGE
+  // ----------------------------------------
+  static async getQueue(userId: string) {
+    const now = new Date();
+
+    const assignment = await prisma.stageAssignment.findFirst({
+      where: {
+        userId,
+        startDate: { lte: now },
+        OR: [
+          { endDate: null },
+          { endDate: { gte: now } },
+        ],
+      },
+    });
+
+    if (!assignment) {
+      throw new Error("No active stage assignment found");
+    }
+
+    return prisma.stageQueue.findMany({
+      where: {
+        stageId: assignment.stageId,
+        status: {
+          in: ["LOADING", "QUEUED"],
+        },
+      },
+      include: {
+        vehicle: true,
+      },
+      orderBy: {
+        position: "asc",
+      },
     });
   }
 }

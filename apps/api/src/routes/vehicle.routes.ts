@@ -15,6 +15,8 @@ import {
   rejectVehicle,
 } from "../controllers/vehicle.controller";
 
+import { getVehicleQueueStatus } from "../controllers/queue.controller";
+
 import {
   VEHICLE_REVIEW_ROLES,
   VEHICLE_APPROVAL_ROLES,
@@ -48,6 +50,12 @@ router.get(
   authenticate,
   getVehicleById
 );
+
+router.get(
+  "/:vehicleId/queue",
+  authenticate,
+  getVehicleQueueStatus
+)
 
 /**
  * Schedule inspection

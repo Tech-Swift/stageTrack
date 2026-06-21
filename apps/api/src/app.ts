@@ -10,6 +10,7 @@ import routeRoutes from "./routes/route.routes";
 import stageRoutes from "./routes/stage.routes";
 import assignmentRoutes from "./routes/assignment.routes";
 import arrivalRoutes from "./routes/arrivalRoutes";
+import queueRoutes from "./routes/queue.routes";
 
 const app = express();
 app.use(express.json());
@@ -32,6 +33,7 @@ app.use("/api/routes", routeRoutes);
 app.use("/api/stages", stageRoutes);
 app.use("/api/assignment", assignmentRoutes);
 app.use("/api/arrivals", arrivalRoutes);
+app.use("/api/queue", queueRoutes);
 
 
 export default app;

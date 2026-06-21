@@ -496,6 +496,9 @@ enum CrewAssignmentStatus {
 
 enum QueueStatus {
   QUEUED
+  LOADING
+  READY_TO_DISPATCH
+  DISPATCHED
   SKIPPED
   REMOVED
 }

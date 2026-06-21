@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "QueueStatus" ADD VALUE 'READY_TO_DISPATCH';
