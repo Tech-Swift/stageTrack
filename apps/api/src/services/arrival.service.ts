@@ -41,7 +41,11 @@ export class ArrivalService {
         where: {
           vehicleId,
           status: {
-            in: ["LOADING", "QUEUED"],
+            in: [
+              "READY_TO_DISPATCH",
+              "LOADING",
+              "QUEUED",
+            ],
           },
         },
       });
@@ -93,16 +97,33 @@ export class ArrivalService {
       // ----------------------------------------
       // 6. CREATE QUEUE ENTRY
       // ----------------------------------------
+      const lastPosition = await tx.stageQueue.aggregate({
+        where: {
+          stageId,
+          position: {
+            not: null,
+          },
+        },
+        _max: {
+          position: true,
+        },
+      });
+
+      const nextPosition = (lastPosition._max.position ?? 0) + 1;
+
+      const position =
+        status === "QUEUED" ? nextPosition : null;
+
       const queueEntry = await tx.stageQueue.create({
         data: {
           stageId,
           vehicleId,
           arrivalId: arrival.id,
-          position: counter.value,
+          sequenceNumber: counter.value,
+          position,
           status,
         },
       });
-
       // ----------------------------------------
       // 7. LINK ARRIVAL ↔ QUEUE
       // ----------------------------------------
