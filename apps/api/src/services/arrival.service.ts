@@ -2,22 +2,20 @@ import { prisma } from "../lib/prisma";
 
 export class ArrivalService {
   static async createArrival(input: {
-    stageId: string;
     vehicleId: string;
     userId: string;
   }) {
-    const { stageId, vehicleId, userId } = input;
+    const { vehicleId, userId } = input;
 
     return await prisma.$transaction(async (tx) => {
       const now = new Date();
 
       // ----------------------------------------
-      // 1. AUTH CHECK (Stage Assignment lock)
+      // 1. GET ACTIVE STAGE ASSIGNMENT
       // ----------------------------------------
-      const assignment = await tx.stageAssignment.findFirst({
+      const assignments = await tx.stageAssignment.findMany({
         where: {
           userId,
-          stageId,
           startDate: { lte: now },
           OR: [
             { endDate: null },
@@ -26,12 +24,20 @@ export class ArrivalService {
         },
       });
 
-      if (!assignment) {
-        throw new Error("Unauthorized: Not an active marshal for this stage");
+      if (assignments.length === 0) {
+        throw new Error("No active stage assignment found");
       }
 
+      if (assignments.length > 1) {
+        throw new Error(
+          "Marshal has multiple active stage assignments"
+        );
+      }
+
+      const stageId = assignments[0].stageId;
+
       // ----------------------------------------
-      // 2. GLOBAL VEHICLE LOCK (no double queue)
+      // 2. GLOBAL VEHICLE LOCK
       // ----------------------------------------
       const activeQueue = await tx.stageQueue.findFirst({
         where: {
@@ -47,38 +53,46 @@ export class ArrivalService {
       }
 
       // ----------------------------------------
-      // 3. CREATE ARRIVAL (EVENT)
+      // 3. CREATE ARRIVAL
       // ----------------------------------------
       const arrival = await tx.arrival.create({
-            data: { stageId, vehicleId },
-            });
-
-            const counter = await tx.stageQueueCounter.upsert({
-            where: { stageId },
-            create: {
-                stageId,
-                value: 1,
-            },
-            update: {
-                value: {
-                increment: 1,
-                },
-            },
-            });
-
-            const queueEntry = await tx.stageQueue.create({
-            data: {
-                stageId,
-                vehicleId,
-                arrivalId: arrival.id,
-                position: counter.value,
-                status: "QUEUED",
-            },
-            });
-
+        data: {
+          stageId,
+          vehicleId,
+        },
+      });
 
       // ----------------------------------------
-      //  LINK ARRIVAL ↔ QUEUE
+      // 4. INCREMENT QUEUE COUNTER
+      // ----------------------------------------
+      const counter = await tx.stageQueueCounter.upsert({
+        where: { stageId },
+        create: {
+          stageId,
+          value: 1,
+        },
+        update: {
+          value: {
+            increment: 1,
+          },
+        },
+      });
+
+      // ----------------------------------------
+      // 5. CREATE QUEUE ENTRY
+      // ----------------------------------------
+      const queueEntry = await tx.stageQueue.create({
+        data: {
+          stageId,
+          vehicleId,
+          arrivalId: arrival.id,
+          position: counter.value,
+          status: "QUEUED",
+        },
+      });
+
+      // ----------------------------------------
+      // 6. LINK ARRIVAL ↔ QUEUE
       // ----------------------------------------
       const updatedArrival = await tx.arrival.update({
         where: { id: arrival.id },
