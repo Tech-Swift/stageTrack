@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import tenantRoutes from "./routes/tenant.routes";
 import registrationRoutes from "./routes/registration.routes";
 import registrationReviewRoutes from "./routes/registration-review.routes";
@@ -13,9 +14,18 @@ import arrivalRoutes from "./routes/arrivalRoutes";
 import queueRoutes from "./routes/queue.routes";
 
 const app = express();
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
-app.get("/health", (_, res) => {
+
+app.get("/api/health", (_, res) => {
   res.json({
     status: "ok",
     service: "StageTrack API",
