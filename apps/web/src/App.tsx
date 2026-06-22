@@ -31,20 +31,20 @@ function App() {
   }, []);
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>StageTrack Web</h1>
+      <div className="min-h-screen bg-blue-100 p-5">
+    <h1 className="text-3xl font-bold">StageTrack Web</h1>
 
-      <p>
-        Status:{" "}
-        {status === "loading"
-          ? "Checking..."
-          : status === "error"
-          ? "🔴 Failed"
-          : "🟢 Connected"}
-      </p>
+    <p className="mt-4">
+      Status:{" "}
+      {status === "loading"
+        ? "Checking..."
+        : status === "error"
+        ? "🔴 Failed"
+        : "🟢 Connected"}
+    </p>
 
-      {service && <p>Service: {service}</p>}
-    </div>
+    {service && <p className="mt-2">Service: {service}</p>}
+  </div>
   );
 }
 
