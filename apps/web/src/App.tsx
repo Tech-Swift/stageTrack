@@ -1,62 +1,38 @@
-// src/App.tsx
-import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { LandingPage } from "./features/landing/LandingPage";
 import RegistrationForm from "./features/registration/RegistrationForm";
 
 function App() {
-  const [status, setStatus] = useState<string>("loading");
-  const [service, setService] = useState<string>("");
-
-  useEffect(() => {
-    const testHealth = async () => {
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/health`
-        );
-
-        if (!res.ok) {
-          throw new Error("Health check failed");
-        }
-
-        const data = await res.json();
-
-        console.log("HEALTH RESPONSE:", data);
-
-        setStatus(data.status);
-        setService(data.service);
-      } catch (err) {
-        console.error("Health error:", err);
-        setStatus("error");
-      }
-    };
-
-    testHealth();
-  }, []);
-
   return (
-    <div className="min-h-screen bg-blue-50 p-5 sm:p-8">
-      {/* Platform Header & Connection Status Tracker */}
-      <header className="max-w-xl mx-auto mb-6 p-4 bg-white rounded-lg shadow-sm border border-blue-100 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">StageTrack Web</h1>
-          {service && <p className="text-xs text-gray-500 mt-0.5">Engine: {service}</p>}
-        </div>
+    <BrowserRouter>
+      <Routes>
+        {/* Main Base Path maps cleanly to the Landing Page */}
+        <Route path="/" element={<LandingPage />} />
         
-        <div className="text-sm font-semibold">
-          {status === "loading" ? (
-            <span className="text-amber-600 animate-pulse">Checking API...</span>
-          ) : status === "error" ? (
-            <span className="text-red-600 bg-red-50 px-2.5 py-1 rounded border border-red-200">🔴 Server Offline</span>
-          ) : (
-            <span className="text-green-700 bg-green-50 px-2.5 py-1 rounded border border-green-200">🟢 Server Connected</span>
-          )}
-        </div>
-      </header>
+        {/* Dedicated Route for Registration Workflow */}
+        <Route 
+          path="/register" 
+          element={
+            <div className="min-h-screen bg-blue-50 py-10 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center">
+              <div className="w-full max-w-xl">
+                <header className="mb-6 text-center">
+                  <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+                    Stage<span className="text-[#2563EB]">Track</span> Registration
+                  </h1>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Set up your platform profile and digitize your terminal operations.
+                  </p>
+                </header>
 
-      {/* Main Container Mounting the Registration Workflow */}
-      <main className="transition-all duration-300">
-        <RegistrationForm />
-      </main>
-    </div>
+                <main className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
+                  <RegistrationForm />
+                </main>
+              </div>
+            </div>
+          } 
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
