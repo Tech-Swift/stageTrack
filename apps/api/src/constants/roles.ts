@@ -1,5 +1,11 @@
 import { UserRole } from "@prisma/client";
 
+export const TENANT_ADJUST_ROLES =[
+  UserRole.SUPER_ADMIN,
+  UserRole.SACCO_ADMIN,
+  UserRole.DIRECTOR
+]
+
 export const REGISTRATION_REVIEW_ROLES = [
   UserRole.SUPER_ADMIN,
   UserRole.SACCO_ADMIN,
