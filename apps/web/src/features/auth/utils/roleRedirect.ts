@@ -1,32 +1,36 @@
 import type { UserRole } from "../types";
 
 export const getDashboardRoute = (
-  role: UserRole
+  role: UserRole,
+  tenantCode?: string
 ) => {
+  const tenant =
+    tenantCode ?? "platform";
+
   switch (role) {
     case "SUPER_ADMIN":
       return "/super-admin";
 
     case "SACCO_ADMIN":
-      return "/admin";
-
-    case "STAGE_MARSHAL":
-      return "/marshal";
-
-    case "DIRECTOR":
-      return "/director";
+      return `/${tenant}/admin`;
 
     case "MANAGER":
-      return "/manager";
+      return `/${tenant}/manager`;
+
+    case "DIRECTOR":
+      return `/${tenant}/director`;
+
+    case "STAGE_MARSHAL":
+      return `/${tenant}/marshal`;
 
     case "DRIVER":
-      return "/driver";
+      return `/${tenant}/driver`;
 
     case "CONDUCTOR":
-      return "/conductor";
+      return `/${tenant}/conductor`;
 
     case "VEHICLE_OWNER":
-      return "/vehicle-owner";
+      return `/${tenant}/vehicle-owner`;
 
     default:
       return "/";

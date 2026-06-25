@@ -9,7 +9,7 @@ interface Props {
   onSuccess?: () => void;
 }
 
-export default function LoginForm({ onSuccess }: Props) {
+export default function LoginForm({ onSuccess, }: Props) {
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -21,17 +21,20 @@ export default function LoginForm({ onSuccess }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    console.log("Login button clicked")
+
     try {
       setLoading(true);
       setError("");
 
       const response = await loginService(email, password);
+      console.log(response.user);
 
       login(response.token, response.user);
 
       onSuccess?.();
 
-      navigate(getDashboardRoute(response.user.role));
+      navigate(getDashboardRoute(response.user.role,response.user.tenantCode));
     } catch (err: any) {
       setError(err.response?.data?.message ?? "Login failed");
     } finally {
