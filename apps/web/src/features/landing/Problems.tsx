@@ -1,115 +1,149 @@
 import React from 'react';
-import { XCircle, CheckCircle, Clipboard, Users, ShieldAlert, TrendingDown } from 'lucide-react';
+import {
+  XCircle,
+  CheckCircle,
+  Clipboard,
+  Users,
+  ShieldAlert,
+  TrendingDown,
+} from 'lucide-react';
 
 export const Problems: React.FC = () => {
   const manualProblems = [
     {
       icon: <Clipboard className="text-red-500" size={24} />,
-      title: "Paper Queue Management",
-      desc: "Vehicle logs on clipboards lead to tracking errors, missed slots, and zero real-time terminal visibility."
+      title: 'Paper Queue Management',
+      desc: 'Vehicle logs on clipboards lead to tracking errors, missed slots, and zero real-time terminal visibility.',
     },
     {
       icon: <Users className="text-red-500" size={24} />,
-      title: "Unclear Marshal Duties",
-      desc: "Lack of centralized schedules leaves staff allocations uncoordinated across separate bays and shifts."
+      title: 'Unclear Marshal Duties',
+      desc: 'Lack of centralized schedules leaves staff allocations uncoordinated across separate bays and shifts.',
     },
     {
       icon: <ShieldAlert className="text-red-500" size={24} />,
-      title: "Scattered Route Data",
-      desc: "Fleet operational statuses and route compliance metrics are completely cut off from SACCO headquarters."
+      title: 'Scattered Route Data',
+      desc: 'Fleet operational statuses and route compliance metrics are completely cut off from SACCO headquarters.',
     },
     {
       icon: <TrendingDown className="text-red-500" size={24} />,
-      title: "No Operational Reports",
-      desc: "Compiling end-of-day revenue performance and vehicle turnover rates takes hours of manual processing."
-    }
+      title: 'No Operational Reports',
+      desc: 'Compiling end-of-day revenue performance and vehicle turnover rates takes hours of manual processing.',
+    },
   ];
 
   return (
-    <section id="problems" className="py-20 bg-white w-full border-b border-slate-100">
-      {/* CONTAINER FLUID: Matching alignment */}
-      <div className="w-full px-4 sm:px-8 lg:px-12">
-        
-        {/* Header Block */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#2563EB] bg-blue-50 px-3 py-1 rounded-full">
+    <section
+      id="problems"
+      className="w-full border-b border-slate-200 bg-white py-20 transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950"
+    >
+      {/* Centered Container */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-8 lg:px-12">
+        {/* Header */}
+        <div className="mx-auto mb-16 max-w-3xl space-y-3 text-center">
+          <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#2563EB] dark:bg-blue-500/10">
             The Industry Challenge
           </span>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight">
+
+          <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
             Terminal Operations Are Still Managed Manually
           </h2>
-          <p className="text-slate-500 text-sm sm:text-base">
-            Relying on physical logbooks creates revenue leaks and communication breakdowns. StageTrack bridges that operational gap.
+
+          <p className="text-sm text-slate-600 dark:text-slate-400 sm:text-base">
+            Relying on physical logbooks creates revenue leaks and communication
+            breakdowns. StageTrack bridges that operational gap.
           </p>
         </div>
 
-        {/* Content Split: Manual Chaos vs Digital Streamline */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-          
-          {/* Left Block: The Manual Way */}
-          <div className="bg-slate-50 rounded-2xl p-6 sm:p-8 border border-slate-100 flex flex-col justify-between">
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          {/* Manual Operations Card */}
+          <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-6 transition-colors dark:border-slate-800 dark:bg-slate-900 sm:p-8">
             <div>
-              <div className="flex items-center gap-2 mb-6">
-                <XCircle className="text-red-500 shrink-0" size={22} />
-                <h3 className="text-lg font-bold text-slate-800">The Traditional Manual Way</h3>
+              <div className="mb-6 flex items-center gap-2">
+                <XCircle className="shrink-0 text-red-500" size={22} />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  The Traditional Manual Way
+                </h3>
               </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {manualProblems.map((prob, idx) => (
+
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                {manualProblems.map((problem, idx) => (
                   <div key={idx} className="space-y-2">
-                    <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
-                      {prob.icon}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 dark:bg-red-500/10">
+                      {problem.icon}
                     </div>
-                    <h4 className="font-bold text-slate-800 text-sm">{prob.title}</h4>
-                    <p className="text-xs text-slate-500 leading-relaxed">{prob.desc}</p>
+
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                      {problem.title}
+                    </h4>
+
+                    <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                      {problem.desc}
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
-            
-            <div className="mt-8 pt-6 border-t border-slate-200/60 text-xs font-medium text-slate-400">
+
+            <div className="mt-8 border-t border-slate-200 pt-6 text-xs font-medium text-slate-500 dark:border-slate-800 dark:text-slate-400">
               Result: Slow terminal dispatch times and administrative errors.
             </div>
           </div>
 
-          {/* Right Block: The StageTrack Way */}
-          <div className="bg-[#0F172A] text-white rounded-2xl p-6 sm:p-8 border border-slate-800 flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,#1e3a8a,transparent_70%)] opacity-40" />
-            
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-6">
-                <CheckCircle className="text-[#22C55E] shrink-0" size={22} />
-                <h3 className="text-lg font-bold text-white">The StageTrack Solution</h3>
+          {/* StageTrack Solution Card */}
+          <div className="relative overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-white via-blue-50 to-white p-6 transition-colors dark:border-slate-800 dark:from-[#0F172A] dark:via-[#0F172A] dark:to-[#0F172A] sm:p-8">
+            {/* Glow Effect (Dark Mode Only) */}
+            <div className="absolute inset-0 hidden dark:block">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,#1e3a8a,transparent_70%)] opacity-40" />
+            </div>
+
+            <div className="relative z-10 flex h-full flex-col justify-between">
+              <div>
+                <div className="mb-6 flex items-center gap-2">
+                  <CheckCircle
+                    className="shrink-0 text-[#22C55E]"
+                    size={22}
+                  />
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    The StageTrack Solution
+                  </h3>
+                </div>
+
+                <p className="mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300 sm:text-base">
+                  By taking your vehicle queues, route assignments, and
+                  personnel profiles completely digital, StageTrack centralizes
+                  your workspace into a cloud-synced operational command center.
+                </p>
+
+                <ul className="space-y-4">
+                  {[
+                    'Real-time visibility into active queue positions.',
+                    'Transparent marshal assignments directly via web dashboard.',
+                    'Automated route compliance logs for transport operators.',
+                    'Instant digital report compilation with zero math required.',
+                  ].map((item, index) => (
+                    <li
+                      key={index}
+                      className="flex items-start gap-3 text-xs text-slate-700 dark:text-slate-300 sm:text-sm"
+                    >
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#2563EB]/20 text-xs font-bold text-[#2563EB]">
+                        ✓
+                      </span>
+
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
-                By taking your vehicle queues, route assignments, and personnel profiles completely digital, StageTrack centralizes your workspace onto an cloud-synced operational matrix.
-              </p>
-
-              <ul className="space-y-4">
-                {[
-                  "Real-time visibility into active queue positions.",
-                  "Transparent marshal assignments directly via web dashboard.",
-                  "Automated route compliance logs for transport operators.",
-                  "Instant digital report compilation with zero math required."
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-xs sm:text-sm text-slate-300">
-                    <span className="w-5 h-5 rounded-md bg-[#2563EB]/20 text-[#2563EB] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                      ✓
-                    </span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-slate-800 relative z-10 text-xs font-semibold text-[#2563EB]">
-              Result: Fast terminal turnarounds, organized crews, and secure metrics.
+              <div className="relative z-10 mt-8 border-t border-blue-100 pt-6 text-xs font-semibold text-[#2563EB] dark:border-slate-800">
+                Result: Fast terminal turnarounds, organized crews, and secure
+                metrics.
+              </div>
             </div>
           </div>
-
         </div>
-
       </div>
     </section>
   );

@@ -7,7 +7,6 @@ import { FeaturesGrid } from './FeaturesGrid';
 import { HowItWorks } from './HowItWorks';
 import { Benefits } from './Benefits';
 import { About } from './About';
-import { TrustedBy } from './TrustedBy';
 import { ContactForm } from './ContactForm';
 
 export const LandingPage: React.FC = () => {
@@ -19,7 +18,6 @@ export const LandingPage: React.FC = () => {
       {/* 2. Main Work Area / Preview Section */}
       <main className="flex-grow pt-20"> 
         <Hero />
-        <TrustedBy />
         <Problems />
         <FeaturesGrid />
         <HowItWorks />

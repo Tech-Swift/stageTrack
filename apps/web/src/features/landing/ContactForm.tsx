@@ -10,28 +10,38 @@ export const ContactForm: React.FC = () => {
   };
 
   return (
-    <section id="contact" className="py-24 bg-[#0F172A] text-white w-full relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#1e3a8a,transparent_60%)] opacity-30" />
+    <section
+      id="contact"
+      className="relative w-full overflow-hidden border-t border-slate-200 bg-white py-16 text-slate-900 transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+    >
+      {/* Background Accent */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,#1e3a8a,transparent_60%)] opacity-20 dark:opacity-30" />
 
-      <div className="w-full px-4 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-        
-        {/* Left Side: Info */}
-        <div className="lg:col-span-5 space-y-6">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#2563EB] bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full inline-block">
+      {/* CONTAINER (fix stretching) */}
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 sm:px-8 lg:grid-cols-12 lg:px-12">
+        {/* LEFT SIDE */}
+        <div className="space-y-4 lg:col-span-5">
+          <span className="inline-block rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#2563EB] dark:bg-blue-500/10">
             Get Started
           </span>
-          <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
+
+          <h2 className="text-3xl font-black leading-tight tracking-tight sm:text-4xl">
             Ready to digitize your terminal logistics?
           </h2>
-          <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
-            Leave your contact details and our deployment team will reach out within 24 hours to schedule a custom system demo for your SACCO board directors.
+
+          <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            Leave your contact details and our deployment team will reach out
+            within 24 hours to schedule a custom system demo for your SACCO
+            board directors.
           </p>
 
-          <div className="space-y-4 pt-4 text-sm text-slate-300">
+          {/* Contact Info */}
+          <div className="space-y-3 pt-2 text-sm text-slate-600 dark:text-slate-400">
             <div className="flex items-center gap-3">
               <Mail size={18} className="text-[#2563EB]" />
               <span>deploy@stagetrack.co.ke</span>
             </div>
+
             <div className="flex items-center gap-3">
               <Phone size={18} className="text-[#2563EB]" />
               <span>+254 700 000000</span>
@@ -39,59 +49,79 @@ export const ContactForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Side: Quick Intake Form */}
-        <div className="lg:col-span-7 w-full max-w-2xl lg:ml-auto">
-          <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-2xl shadow-2xl backdrop-blur-sm">
-            
+        {/* RIGHT SIDE */}
+        <div className="w-full lg:col-span-7 lg:ml-auto">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900 sm:p-8">
             {!submitted ? (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Your Name</label>
-                    <input required type="text" placeholder="e.g., John Kamau" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-[#2563EB] transition-colors text-white" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">SACCO Name</label>
-                    <input required type="text" placeholder="e.g., 2N KMM Transport" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-[#2563EB] transition-colors text-white" />
-                  </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Row 1 */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <input
+                    required
+                    type="text"
+                    placeholder="Your Name"
+                    className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition-colors focus:border-[#2563EB] dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                  />
+
+                  <input
+                    required
+                    type="text"
+                    placeholder="SACCO Name"
+                    className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition-colors focus:border-[#2563EB] dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                  />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Phone Number</label>
-                    <input required type="tel" placeholder="e.g., 0712345678" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-[#2563EB] transition-colors text-white" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
-                    <input required type="email" placeholder="e.g., info@sacco.co.ke" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-[#2563EB] transition-colors text-white" />
-                  </div>
+                {/* Row 2 */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <input
+                    required
+                    type="tel"
+                    placeholder="Phone Number"
+                    className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition-colors focus:border-[#2563EB] dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                  />
+
+                  <input
+                    required
+                    type="email"
+                    placeholder="Email Address"
+                    className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition-colors focus:border-[#2563EB] dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                  />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Message / Operational Requirements</label>
-                  <textarea rows={4} placeholder="Tell us how many stages or vehicles your fleet manages..." className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-[#2563EB] transition-colors text-white resize-none" />
-                </div>
+                {/* Message */}
+                <textarea
+                  rows={3}
+                  placeholder="Operational requirements (optional)"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition-colors focus:border-[#2563EB] dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                />
 
-                <button type="submit" className="w-full bg-[#2563EB] hover:bg-blue-700 text-white font-bold p-4 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 cursor-pointer text-sm">
-                  Book Operational Consultation
+                {/* Button */}
+                <button
+                  type="submit"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] p-3 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition-colors hover:bg-blue-700"
+                >
+                  Book Consultation
                   <ArrowRight size={16} />
                 </button>
               </form>
             ) : (
-              <div className="text-center py-12 space-y-4">
-                <div className="w-16 h-16 bg-blue-500/10 text-[#2563EB] border border-blue-500/20 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                  <CheckCircle2 size={32} />
+              <div className="space-y-4 py-10 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-blue-500/20 bg-blue-500/10 text-[#2563EB]">
+                  <CheckCircle2 size={28} />
                 </div>
-                <h3 className="text-xl font-bold">Request Received Successfully</h3>
-                <p className="text-slate-400 text-sm max-w-sm mx-auto">
-                  Thank you. A StageTrack systems specialist will reach out directly to coordinate your consultation.
+
+                <h3 className="text-lg font-bold">
+                  Request Received Successfully
+                </h3>
+
+                <p className="mx-auto max-w-sm text-sm text-slate-600 dark:text-slate-400">
+                  A StageTrack systems specialist will reach out shortly to
+                  coordinate your consultation.
                 </p>
               </div>
             )}
-
           </div>
         </div>
-
       </div>
     </section>
   );
