@@ -4,7 +4,7 @@ import FormInput from '../../components/FormInput';
 import FormSelect from '../../components/FormSelect';
 import FormFileUpload from '../../components/FormFileUpload';
 import { validateEmail, validatePhone, ALLOWED_ROLES, ROLE_DOCUMENT_RULES } from './validation';
-import { api } from '../../services/api';
+import { api } from '../../lib/api';
 import type { RegistrationFormData, FormErrors, Tenant } from '../../types/registration';
 
 const FALLBACK_TENANTS: Tenant[] = [

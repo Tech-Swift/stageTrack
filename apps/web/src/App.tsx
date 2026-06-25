@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "../src/components/layout/theme-provider";
 
-import { LandingPage } from "./features/landing/LandingPage";
+import { LandingPage } from "./pages/LandingPage";
 import RegistrationForm from "./features/registration/RegistrationForm";
 
 function App() {
