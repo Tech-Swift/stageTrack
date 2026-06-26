@@ -460,6 +460,63 @@ export const rejectVehicle = async (req: Request, res: Response) => {
   }
 };
 
+export const searchVehicles = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const plate = req.query.plateNumber as string;
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    if (!plate || plate.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Search term required",
+      });
+    }
+
+    const vehicles =
+      await prisma.vehicle.findMany({
+        where: {
+          tenantId,
+          status: "ACTIVE",
+          plateNumber: {
+            contains: plate,
+            mode: "insensitive",
+          },
+        },
+        select: {
+          id: true,
+          plateNumber: true,
+          capacity: true,
+        },
+        take: 10,
+      });
+
+    return res.json({
+      success: true,
+      data: vehicles,
+    });
+  } catch (error) {
+    console.error(
+      "Search vehicles:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to search vehicles",
+    });
+  }
+};
+
 export const getVehicles = async (req: Request, res: Response) => {
   try {
     const user = req.user!;

@@ -4,6 +4,7 @@ import { authorize } from "../middlewares/authorize.middleware";
 
 import {
   registerVehicle,
+  searchVehicles,
   getVehicles,
   getVehicleById,
   scheduleInspection,
@@ -32,6 +33,12 @@ router.post(
   authenticate,
   registerVehicle
 );
+
+router.get(
+  "/search",
+  authenticate,
+  searchVehicles
+)
 
 /**
  * List vehicles
