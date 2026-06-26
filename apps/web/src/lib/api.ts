@@ -5,7 +5,7 @@ export const api = axios.create({
     timeout: 10000,
 });
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem("stagetrack_token");
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
