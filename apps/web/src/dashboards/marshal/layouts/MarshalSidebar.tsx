@@ -5,43 +5,44 @@ import {
   User,
 } from "lucide-react";
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useParams } from "react-router-dom";
 import { useMarshalDashboard } from "../context/MarshalDashboadContext";
 
-const links = [
-  {
-    label: "Queue",
-    to: "/marshal",
-    icon: Bus,
-  },
-  {
-    label: "Dashboard",
-    to: "/marshal/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Notifications",
-    to: "/marshal/notifications",
-    icon: Bell,
-  },
-  {
-    label: "Profile",
-    to: "/marshal/profile",
-    icon: User,
-  },
-];
-
 export default function MarshalSidebar() {
-  const { dashboard } =
-    useMarshalDashboard();
+  const { dashboard } = useMarshalDashboard();
+  const { tenantCode } = useParams();
 
-  const branding =
-    dashboard.branding;
+  const branding = dashboard.branding;
 
   const tenantName =
     branding?.displayName ??
     dashboard.tenant?.name ??
     "StageTrack";
+
+  const base = `/${tenantCode}/marshal`;
+
+  const links = [
+    {
+      label: "Queue",
+      to: base,
+      icon: Bus,
+    },
+    {
+      label: "Dashboard",
+      to: `${base}/dashboard`,
+      icon: LayoutDashboard,
+    },
+    {
+      label: "Notifications",
+      to: `${base}/notifications`,
+      icon: Bell,
+    },
+    {
+      label: "Profile",
+      to: `${base}/profile`,
+      icon: User,
+    },
+  ];
 
   return (
     <aside className="flex h-screen w-72 flex-col border-r bg-white">
@@ -49,9 +50,7 @@ export default function MarshalSidebar() {
         <h2
           className="text-2xl font-bold"
           style={{
-            color:
-              branding?.primaryColor ??
-              "#2563EB",
+            color: branding?.primaryColor ?? "#2563EB",
           }}
         >
           {tenantName}
@@ -80,7 +79,6 @@ export default function MarshalSidebar() {
                 }
               >
                 <Icon size={20} />
-
                 {link.label}
               </NavLink>
             );

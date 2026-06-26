@@ -4,14 +4,18 @@ import {
   User,
 } from "lucide-react";
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useParams } from "react-router-dom";
 
 export default function MarshalBottomNav() {
+  const { tenantCode } = useParams();
+
+  const base = `/${tenantCode}/marshal`;
+
   return (
     <div className="border-t bg-white">
       <div className="grid grid-cols-3">
         <NavLink
-          to="/marshal"
+          to={base}
           className="flex flex-col items-center py-3"
         >
           <Bus size={22} />
@@ -21,7 +25,7 @@ export default function MarshalBottomNav() {
         </NavLink>
 
         <NavLink
-          to="/marshal/notifications"
+          to={`${base}/notifications`}
           className="flex flex-col items-center py-3"
         >
           <Bell size={22} />
@@ -31,7 +35,7 @@ export default function MarshalBottomNav() {
         </NavLink>
 
         <NavLink
-          to="/marshal/profile"
+          to={`${base}/profile`}
           className="flex flex-col items-center py-3"
         >
           <User size={22} />
