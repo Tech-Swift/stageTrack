@@ -235,25 +235,31 @@ model StageMarshal {
 }
 
 model StageAssignment {
-  id        String    @id @default(cuid())
-  tenantId  String
-  userId    String
-  stageId   String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  endDate   DateTime?
-  startDate DateTime
-  shiftStart  String?
-  shiftEnd    String?
-  stage     Stage     @relation(fields: [stageId], references: [id])
-  tenant    Tenant    @relation(fields: [tenantId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
+  id         String    @id @default(cuid())
+  tenantId   String
+  userId     String
+  stageId     String
 
-  @@unique([tenantId, userId, stageId, startDate])
+  startDate   DateTime
+  endDate     DateTime?
+
+  // Optional daily shift hours
+  shiftStart  String?   @db.VarChar(5) // HH:mm
+  shiftEnd    String?   @db.VarChar(5) // HH:mm
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  user         User      @relation(fields: [userId], references: [id])
+  stage         Stage      @relation(fields: [stageId], references: [id])
+
   @@index([tenantId])
   @@index([userId])
   @@index([stageId])
+  @@index([userId, stageId])
   @@index([startDate])
+  @@index([endDate])
 }
 
 model Vehicle {

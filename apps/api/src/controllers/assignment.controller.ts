@@ -5,6 +5,7 @@ import {
   getStageAssignmentsService,
   getActiveMarshalsForStage,
   getMarshalAssignmentsService,
+  getMarshalDutyStatus
 } from "../services/assignment.service";
 import { getAssignmentStatus } from "../utils/assignment";
 import { getParam } from "../utils/http"
@@ -26,7 +27,6 @@ export const assignMarshalToStage = async (
       });
       return;
     }
-
     const assignment =
       await createStageAssignment({
         tenantId,
@@ -34,8 +34,9 @@ export const assignMarshalToStage = async (
         stageId: data.stageId,
         startDate: data.startDate,
         endDate: data.endDate,
+        shiftStart: data.shiftStart,
+        shiftEnd: data.shiftEnd,
       });
-
     res.status(201).json({
       success: true,
       message: "Marshal assigned successfully",
@@ -159,6 +160,61 @@ export const getActiveMarshals = async (
     });
   }
 };
+
+export const getMyDutyStatus =
+  async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const tenantId =
+        req.user?.tenantId;
+
+      const userId = req.user?.userId;
+
+      const stageId = getParam(
+        req,
+        "stageId"
+      );
+
+      if (
+        !tenantId ||
+        !userId ||
+        !stageId
+      ) {
+        res.status(400).json({
+          success: false,
+          message:
+            "Missing required information",
+        });
+
+        return;
+      }
+
+      const data =
+        await getMarshalDutyStatus(
+          tenantId,
+          userId,
+          stageId
+        );
+
+      res.status(200).json({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      console.error(
+        "getMyDutyStatus error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Failed to get duty status",
+      });
+    }
+  };
 
 export const getMarshalAssignments = async (
   req: Request,

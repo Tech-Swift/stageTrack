@@ -8,6 +8,7 @@ import {
 
 import {
     getActiveMarshals,
+    getMyDutyStatus,
     getStageAssignments
 } from "../controllers/assignment.controller";
 
@@ -47,6 +48,12 @@ router.get(
     authenticate,
     getActiveMarshals
 )
+
+router.get(
+  "/:stageId/my-status",
+  authenticate,
+  getMyDutyStatus
+);
 
 router.get(
     "/:stageId/queue",

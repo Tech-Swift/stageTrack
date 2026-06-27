@@ -1,18 +1,37 @@
 import { z } from "zod";
 
-export const assignMarshalSchema = z
-  .object({
-    userId: z.string().cuid(),
-    stageId: z.string().cuid(),
+export const assignMarshalSchema =
+  z
+    .object({
+      userId: z.string().min(1),
+      stageId: z.string().min(1),
+      startDate: z.coerce.date(),
+      endDate: z.coerce
+        .date()
+        .nullable()
+        .optional(),
 
-    startDate: z.coerce.date(),
+      shiftStart: z
+        .string()
+        .regex(/^([01]\d|2[0-3]):([0-5]\d)$/)
+        .nullable()
+        .optional(),
 
-    endDate: z.coerce.date().optional(),
-  })
-  .refine(
-    (data) => !data.endDate || data.endDate > data.startDate,
-    {
-      message: "End date must be after start date",
-      path: ["endDate"],
-    }
-  );
+      shiftEnd: z
+        .string()
+        .regex(/^([01]\d|2[0-3]):([0-5]\d)$/)
+        .nullable()
+        .optional(),
+    })
+    .refine(
+      (data) =>
+        (!!data.shiftStart &&
+          !!data.shiftEnd) ||
+        (!data.shiftStart &&
+          !data.shiftEnd),
+      {
+        message:
+          "shiftStart and shiftEnd must both be provided",
+        path: ["shiftStart"],
+      }
+    );
