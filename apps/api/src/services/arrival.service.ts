@@ -69,18 +69,30 @@ export class ArrivalService {
       // ----------------------------------------
       // 4. INCREMENT QUEUE COUNTER
       // ----------------------------------------
-      const counter = await tx.stageQueueCounter.upsert({
-        where: { stageId },
-        create: {
-          stageId,
-          value: 1,
-        },
-        update: {
-          value: {
-            increment: 1,
+      const today = new Date(now);
+      today.setHours(0, 0, 0, 0);
+
+      const counter =
+        await tx.stageQueueCounter.upsert({
+          where: {
+            stageId_date: {
+              stageId,
+              date: today,
+            },
           },
-        },
-      });
+          create: {
+            stageId,
+            date: today,
+            value: 1,
+          },
+          update: {
+            value: {
+              increment: 1,
+            },
+          },
+        });
+
+      const sequenceNumber = counter.value;
 
       // ----------------------------------------
       // 5. CHECK IF ANY VEHICLE IS CURRENTLY LOADING
@@ -119,7 +131,7 @@ export class ArrivalService {
           stageId,
           vehicleId,
           arrivalId: arrival.id,
-          sequenceNumber: counter.value,
+          sequenceNumber,
           position,
           status,
         },

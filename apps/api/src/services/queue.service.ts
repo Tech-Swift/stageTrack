@@ -3,13 +3,58 @@ import { Prisma } from "@prisma/client";
 
 export class QueueService {
   /**
-   * Get all queued vehicles for a stage
+   * Recalculate queue positions
+   */
+  static async recalculateQueuePositions(
+    tx: Prisma.TransactionClient,
+    stageId: string
+  ) {
+    const activeQueue = await tx.stageQueue.findMany({
+      where: {
+        stageId,
+        status: {
+          in: ["LOADING", "QUEUED"],
+        },
+      },
+      orderBy: {
+        enqueuedAt: "asc",
+      },
+    });
+
+    for (let i = 0; i < activeQueue.length; i++) {
+      await tx.stageQueue.update({
+        where: {
+          id: activeQueue[i].id,
+        },
+        data: {
+          position: i + 1,
+        },
+      });
+    }
+
+    await tx.stageQueue.updateMany({
+      where: {
+        stageId,
+        status: {
+          in: ["READY_TO_DISPATCH", "DISPATCHED"],
+        },
+      },
+      data: {
+        position: null,
+      },
+    });
+  }
+
+  /**
+   * Get stage queue
    */
   static async getStageQueue(stageId: string) {
     return prisma.stageQueue.findMany({
       where: {
         stageId,
-        status: "QUEUED",
+        status: {
+          in: ["LOADING", "QUEUED"],
+        },
       },
       orderBy: {
         position: "asc",
@@ -26,16 +71,13 @@ export class QueueService {
   }
 
   /**
-   * Get next vehicle in queue for a stage
+   * Get current loading vehicle
    */
   static async getNextVehicle(stageId: string) {
     return prisma.stageQueue.findFirst({
       where: {
         stageId,
-        status: "QUEUED",
-      },
-      orderBy: {
-        position: "asc",
+        status: "LOADING",
       },
       include: {
         vehicle: true,
@@ -45,12 +87,19 @@ export class QueueService {
   }
 
   /**
-   * Get a vehicle's queue status (current active queue entry)
+   * Vehicle queue status
    */
   static async getVehicleQueueStatus(vehicleId: string) {
     return prisma.stageQueue.findFirst({
       where: {
         vehicleId,
+        status: {
+          in: [
+            "LOADING",
+            "QUEUED",
+            "READY_TO_DISPATCH",
+          ],
+        },
       },
       include: {
         stage: true,
@@ -60,170 +109,203 @@ export class QueueService {
   }
 
   /**
-   * Promote next vehicle in queue to LOADING
-   * (safe single-entry enforcement per stage)
+   * Promote next vehicle
    */
-
-    static async promoteNextVehicle(
+  static async promoteNextVehicle(
     tx: Prisma.TransactionClient,
     stageId: string
   ) {
-    // STEP 1: Try to atomically reserve a LOADING slot
-    const existingLoading = await tx.stageQueue.findFirst({
-      where: {
-        stageId,
-        status: "LOADING",
-      },
-      select: { id: true },
-    });
+    const existingLoading =
+      await tx.stageQueue.findFirst({
+        where: {
+          stageId,
+          status: "LOADING",
+        },
+      });
 
-    // If someone is already loading, STOP immediately
-    if (existingLoading) return;
+    if (existingLoading) {
+      return;
+    }
 
-    // STEP 2: Atomically "claim" the next QUEUED vehicle
-    // We do this by selecting + updating inside the SAME transaction
-    const nextVehicle = await tx.stageQueue.findFirst({
-      where: {
-        stageId,
-        status: "QUEUED",
-      },
-      orderBy: {
-        position: "asc",
-      },
-      select: {
-        id: true,
-      },
-    });
+    const nextVehicle =
+      await tx.stageQueue.findFirst({
+        where: {
+          stageId,
+          status: "QUEUED",
+        },
+        orderBy: {
+          enqueuedAt: "asc",
+        },
+      });
 
-    if (!nextVehicle) return;
+    if (!nextVehicle) {
+      return;
+    }
 
-    // STEP 3: DOUBLE-SAFETY UPDATE (prevents race overwrite)
-    const updated = await tx.stageQueue.updateMany({
+    await tx.stageQueue.update({
       where: {
         id: nextVehicle.id,
-        stageId,
-        status: "QUEUED", // 🔒 critical guard
       },
       data: {
         status: "LOADING",
+        position: 1,
       },
     });
 
-    // If 0 rows updated, someone else already claimed it
-    if (updated.count === 0) return;
-
-    return nextVehicle.id;
+    await this.recalculateQueuePositions(
+      tx,
+      stageId
+    );
   }
 
-  static async markReady(queueId: string, userId: string) {
-  return prisma.$transaction(async (tx) => {
-    // 1. Fetch user with role
-    const user = await tx.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        role: true,
-      },
-    });
+  /**
+   * Mark loading vehicle ready
+   */
+  static async markReady(
+    queueId: string,
+    userId: string
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          id: true,
+          role: true,
+        },
+      });
 
-    if (!user) {
-      throw new Error("User not found.");
-    }
+      if (!user) {
+        throw new Error("User not found.");
+      }
 
-    // 2. Role check (core security gate)
-    const allowed =
-      user.role === "STAGE_MARSHAL" ||
-      user.role === "SUPER_ADMIN";
+      const allowed =
+        user.role === "STAGE_MARSHAL" ||
+        user.role === "SUPER_ADMIN";
 
-    if (!allowed) {
-      throw new Error(
-        "You are not authorized to mark vehicles as ready."
+      if (!allowed) {
+        throw new Error(
+          "You are not authorized to mark vehicles as ready."
+        );
+      }
+
+      const queueEntry =
+        await tx.stageQueue.findUnique({
+          where: {
+            id: queueId,
+          },
+        });
+
+      if (!queueEntry) {
+        throw new Error(
+          "Queue entry not found."
+        );
+      }
+
+      if (queueEntry.status !== "LOADING") {
+        throw new Error(
+          "Only a loading vehicle can be marked ready."
+        );
+      }
+
+      const updated =
+        await tx.stageQueue.update({
+          where: {
+            id: queueId,
+          },
+          data: {
+            status: "READY_TO_DISPATCH",
+            position: null,
+          },
+        });
+
+      await this.promoteNextVehicle(
+        tx,
+        queueEntry.stageId
       );
-    }
 
-    // 3. Fetch queue entry
-    const queueEntry = await tx.stageQueue.findUnique({
-      where: { id: queueId },
-    });
-
-    if (!queueEntry) {
-      throw new Error("Queue entry not found.");
-    }
-
-    // 4. State validation
-    if (queueEntry.status !== "LOADING") {
-      throw new Error(
-        "Only a loading vehicle can be marked ready."
+      await this.recalculateQueuePositions(
+        tx,
+        queueEntry.stageId
       );
-    }
 
-    // 5. Update status
-    const updated = await tx.stageQueue.update({
-      where: { id: queueId },
-      data: {
-        status: "READY_TO_DISPATCH",
-      },
+      return updated;
     });
+  }
 
-    // 6. Promote next vehicle safely
-    await this.promoteNextVehicle(tx, queueEntry.stageId);
+  /**
+   * Dispatch vehicle
+   */
+  static async dispatchVehicle(
+    queueId: string,
+    userId: string
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          id: true,
+          role: true,
+        },
+      });
 
-    return updated;
-  });
-}
+      if (!user) {
+        throw new Error("User not found.");
+      }
 
-static async dispatchVehicle(queueId: string, userId: string) {
-  return prisma.$transaction(async (tx) => {
-    // 1. Fetch user + role
-    const user = await tx.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        role: true,
-      },
-    });
+      const allowed =
+        user.role === "STAGE_MARSHAL" ||
+        user.role === "SUPER_ADMIN";
 
-    if (!user) {
-      throw new Error("User not found.");
-    }
+      if (!allowed) {
+        throw new Error(
+          "You are not authorized to dispatch vehicles."
+        );
+      }
 
-    // 2. Authorization check
-    const allowed =
-      user.role === "STAGE_MARSHAL" ||
-      user.role === "SUPER_ADMIN";
+      const queueEntry =
+        await tx.stageQueue.findUnique({
+          where: {
+            id: queueId,
+          },
+        });
 
-    if (!allowed) {
-      throw new Error(
-        "You are not authorized to dispatch vehicles."
+      if (!queueEntry) {
+        throw new Error(
+          "Queue entry not found."
+        );
+      }
+
+      if (
+        queueEntry.status !==
+        "READY_TO_DISPATCH"
+      ) {
+        throw new Error(
+          "Vehicle is not ready for dispatch."
+        );
+      }
+
+      const dispatched =
+        await tx.stageQueue.update({
+          where: {
+            id: queueId,
+          },
+          data: {
+            status: "DISPATCHED",
+            dispatchedAt: new Date(),
+            position: null,
+          },
+        });
+
+      await this.recalculateQueuePositions(
+        tx,
+        queueEntry.stageId
       );
-    }
 
-    // 3. Fetch queue entry
-    const queueEntry = await tx.stageQueue.findUnique({
-      where: { id: queueId },
+      return dispatched;
     });
-
-    if (!queueEntry) {
-      throw new Error("Queue entry not found.");
-    }
-
-    // 4. State validation
-    if (queueEntry.status !== "READY_TO_DISPATCH") {
-      throw new Error(
-        "Vehicle is not ready for dispatch."
-      );
-    }
-
-    // 5. Atomic update
-    const dispatched = await tx.stageQueue.update({
-      where: { id: queueId },
-      data: {
-        status: "DISPATCHED",
-        dispatchedAt: new Date(),
-      },
-    });
-
-    return dispatched;
-  });
-}
+  }
 }
