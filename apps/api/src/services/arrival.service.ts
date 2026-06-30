@@ -37,6 +37,7 @@ export class ArrivalService {
       // ----------------------------------------
       // 2. VEHICLE GLOBAL LOCK (LOADING + QUEUED)
       // ----------------------------------------
+
       const activeQueue = await tx.stageQueue.findFirst({
         where: {
           vehicleId,
@@ -48,12 +49,20 @@ export class ArrivalService {
             ],
           },
         },
+        include: {
+          stage: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
       });
 
       if (activeQueue) {
         throw new Error(
-          "Vehicle already active in a stage queue. Dispatch first."
-        );
+          `This vehicle is already in the queue at ${activeQueue.stage.name}. A vehicle can only be in one active queue at a time.`
+      );
       }
 
       // ----------------------------------------

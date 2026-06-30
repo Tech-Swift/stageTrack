@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import { ArrivalService } from "../services/arrival.service";
 
-export const createArrival = async (req: Request, res: Response) => {
+export const createArrival = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const { vehicleId } = req.body;
     const userId = req.user?.userId;
@@ -18,13 +21,24 @@ export const createArrival = async (req: Request, res: Response) => {
       });
     }
 
-    const result = await ArrivalService.createArrival({
-      vehicleId,
-      userId,
-    });
+    const result =
+      await ArrivalService.createArrival({
+        vehicleId,
+        userId,
+      });
 
     return res.status(201).json(result);
   } catch (error: any) {
+    if (
+      error.message?.includes(
+        "already in the queue"
+      )
+    ) {
+      return res.status(409).json({
+        message: error.message,
+      });
+    }
+
     return res.status(400).json({
       message: error.message,
     });
