@@ -15,7 +15,7 @@ export default function MarshalHeader() {
     dashboard.lastAssignment?.stage;
 
   const isOnline =
-    !!dashboard.activeAssignment;
+    dashboard.status === "ON_DUTY";
 
   return (
     <header className="border-b bg-white px-4 py-4">

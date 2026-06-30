@@ -215,48 +215,47 @@ export const getMarshalAssignmentsService =
     });
   };
 
-export const getMarshalDutyStatus =
-  async (
-    tenantId: string,
-    userId: string,
-    stageId: string
-  ) => {
-    const assignments =
-      await prisma.stageAssignment.findMany({
-        where: {
-          tenantId,
-          userId,
-          stageId,
-        },
-        orderBy: {
-          startDate: "desc",
-        },
-      });
+export const getMarshalDutyStatus = async (
+  tenantId: string,
+  userId: string,
+  stageId: string
+) => {
+  const assignments =
+    await prisma.stageAssignment.findMany({
+      where: {
+        tenantId,
+        userId,
+        stageId,
+      },
+      orderBy: {
+        startDate: "desc",
+      },
+    });
 
-    if (!assignments.length) {
-      return {
-        status: "NOT_ASSIGNED",
-        canManageQueue: false,
-        assignment: null,
-      };
-    }
-
-    const activeAssignment =
-      assignments.find((assignment) =>
-        isOnDuty(assignment)
-      );
-
-    if (!activeAssignment) {
-      return {
-        status: "OFF_DUTY",
-        canManageQueue: false,
-        assignment: null,
-      };
-    }
-
+  if (!assignments.length) {
     return {
-      status: "ACTIVE",
-      canManageQueue: true,
-      assignment: activeAssignment,
+      status: "OFFLINE",
+      canManageQueue: false,
+      assignment: null,
     };
+  }
+
+  const activeAssignment =
+    assignments.find((assignment) =>
+      isOnDuty(assignment)
+    );
+
+  if (!activeAssignment) {
+    return {
+      status: "OFFLINE",
+      canManageQueue: false,
+      assignment: null,
+    };
+  }
+
+  return {
+    status: "ON_DUTY",
+    canManageQueue: true,
+    assignment: activeAssignment,
   };
+};

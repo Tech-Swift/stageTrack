@@ -24,11 +24,15 @@ export interface DashboardData {
 
   activeAssignment: {
     id: string;
+    stageId: string;
     stage: {
       id: string;
       name: string;
     };
   } | null;
+
+  status: "ON_DUTY" | "OFFLINE";
+  canManageQueue: boolean;
 
   lastAssignment: {
     id: string;

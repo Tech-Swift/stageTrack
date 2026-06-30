@@ -14,6 +14,8 @@ export default function Queue() {
 
   const { data: dashboard } = useDashboard();
 
+  const canManageQueue = dashboard?.canManageQueue ?? false;
+
   const stage =
     dashboard?.activeAssignment?.stage ??
     dashboard?.lastAssignment?.stage;
@@ -35,13 +37,19 @@ export default function Queue() {
     (vehicle) => vehicle.status === "QUEUED"
   );
 
-  const handleReady = async (queueId: string) => {
-    try {
-      await markReadyMutation.mutateAsync(queueId);
-    } catch (error) {
-      console.error("Ready failed:", error);
-    }
-  };
+  const handleReady = async (
+      queueId: string
+    ) => {
+      if (!canManageQueue) {
+        return;
+      }
+
+      try {
+        await markReadyMutation.mutateAsync(queueId);
+      } catch (error) {
+        console.error("Ready failed:", error);
+      }
+    };
 
   return (
     <div className="space-y-6">
@@ -51,7 +59,25 @@ export default function Queue() {
         loading={dashboard.queueSummary?.loading ?? 0}
         dispatchedToday={dashboard.queueSummary?.dispatchedToday ?? 0}
       />
+      {!canManageQueue && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <div className="text-2xl">⚠️</div>
 
+            <div>
+              <h3 className="font-semibold text-amber-900">
+                You are currently offline
+              </h3>
+
+              <p className="mt-1 text-sm text-amber-800">
+                You do not have an active duty assignment at the
+                moment. Queue operations are disabled until your
+                scheduled shift begins.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Loading Vehicle */}
       {dashboard.loadingVehicle && (
         <LoadingVehicleCard
@@ -67,14 +93,22 @@ export default function Queue() {
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">Waiting Queue</h2>
-
           <button
-            onClick={() => setShowArrivalModal(true)}
-            className="rounded-xl px-4 py-2 text-white font-semibold"
-            style={{ backgroundColor: primaryColor }}
-          >
-            + Add Arrival
-          </button>
+          onClick={() => {
+            if (canManageQueue) {
+              setShowArrivalModal(true);
+            }
+          }}
+          disabled={!canManageQueue}
+          className={`rounded-xl px-4 py-2 font-semibold text-white transition ${
+            !canManageQueue
+              ? "cursor-not-allowed opacity-50"
+              : ""
+          }`}
+          style={{ backgroundColor: primaryColor }}
+        >
+          + Add Arrival
+        </button>
         </div>
 
         {/* TRUE EMPTY STATE LOGIC */}
@@ -97,12 +131,15 @@ export default function Queue() {
       </div>
 
       {/* Arrival Modal */}
-      {showArrivalModal && (
-        <AddArrivalModal
-          stageId={stageId ?? ""}
-          primaryColor={primaryColor}
-          onClose={() => setShowArrivalModal(false)}
-        />
+      {showArrivalModal &&
+        canManageQueue && (
+          <AddArrivalModal
+            stageId={stageId ?? ""}
+            primaryColor={primaryColor}
+            onClose={() =>
+              setShowArrivalModal(false)
+            }
+          />
       )}
     </div>
   );

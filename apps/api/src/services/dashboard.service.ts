@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma";
+import { getMarshalDutyStatus } from "./assignment.service"; // adjust path
 
 export const getMarshalDashboardData = async (
   userId: string
@@ -20,19 +21,9 @@ export const getMarshalDashboardData = async (
     throw new Error("User not found");
   }
 
-  const activeAssignment =
-    await prisma.stageAssignment.findFirst({
-      where: {
-        userId,
-        endDate: null,
-      },
-      include: {
-        stage: true,
-      },
-      orderBy: {
-        startDate: "desc",
-      },
-    });
+  if(!user.tenantId) {
+    throw new Error("User is not assigned to a tenant");
+  }
 
   const lastAssignment =
     await prisma.stageAssignment.findFirst({
@@ -47,6 +38,20 @@ export const getMarshalDashboardData = async (
       },
     });
 
+  let duty = {
+    status: "OFFLINE",
+    canManageQueue: false,
+    assignment: null as any,
+  };
+
+  if (lastAssignment) {
+    duty = await getMarshalDutyStatus(
+      user.tenantId,
+      userId,
+      lastAssignment.stageId
+    );
+  }
+
   let queueSummary = {
     waiting: 0,
     loading: 0,
@@ -56,7 +61,7 @@ export const getMarshalDashboardData = async (
   let loadingVehicle = null;
 
   const stageId =
-    activeAssignment?.stageId ??
+    duty.assignment?.stageId ??
     lastAssignment?.stageId;
 
   if (stageId) {
@@ -127,7 +132,12 @@ export const getMarshalDashboardData = async (
 
     branding: user.tenant?.branding,
 
-    activeAssignment,
+    activeAssignment: duty.assignment,
+
+    status: duty.status,
+
+    canManageQueue:
+      duty.canManageQueue,
 
     lastAssignment,
 
