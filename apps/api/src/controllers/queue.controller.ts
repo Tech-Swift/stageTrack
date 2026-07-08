@@ -105,29 +105,3 @@ export const markReady = async (req: Request, res: Response) => {
     });
   }
 };
-
-export const dispatchVehicle = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const queueId = req.params.queueId as string;
-    const userId = req.user!.userId;
-
-    const result =
-      await QueueService.dispatchVehicle(
-        queueId,
-        userId
-      );
-
-    res.status(200).json({
-      success: true,
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
