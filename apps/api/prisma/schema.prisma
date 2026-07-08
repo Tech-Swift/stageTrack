@@ -28,6 +28,7 @@ model Tenant {
   vehicles             Vehicle[]
   vehicleCrews         VehicleCrew[]
   vehicleOwners        VehicleOwner[]
+  dispatches           Dispatch[]
 }
 
 model TenantBranding {
@@ -107,6 +108,7 @@ model User {
   rejectedRequests     RegistrationRequest[] @relation("RegistrationRejectedBy")
   registrationRequests RegistrationRequest?
   StageAssignment      StageAssignment[]
+  dispatches           Dispatch[]
   stageMarshal         StageMarshal?
   tenant               Tenant?               @relation(fields: [tenantId], references: [id])
   profile              UserProfile?
@@ -235,24 +237,24 @@ model StageMarshal {
 }
 
 model StageAssignment {
-  id         String    @id @default(cuid())
-  tenantId   String
-  userId     String
-  stageId     String
+  id       String @id @default(cuid())
+  tenantId String
+  userId   String
+  stageId  String
 
-  startDate   DateTime
-  endDate     DateTime?
+  startDate DateTime
+  endDate   DateTime?
 
   // Optional daily shift hours
-  shiftStart  String?   @db.VarChar(5) // HH:mm
-  shiftEnd    String?   @db.VarChar(5) // HH:mm
+  shiftStart String? @db.VarChar(5) // HH:mm
+  shiftEnd   String? @db.VarChar(5) // HH:mm
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  tenant       Tenant    @relation(fields: [tenantId], references: [id])
-  user         User      @relation(fields: [userId], references: [id])
-  stage         Stage      @relation(fields: [stageId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  stage  Stage  @relation(fields: [stageId], references: [id])
 
   @@index([tenantId])
   @@index([userId])
@@ -327,6 +329,7 @@ model Arrival {
   stage        Stage       @relation(fields: [stageId], references: [id])
   vehicle      Vehicle     @relation(fields: [vehicleId], references: [id])
   queueEntry   StageQueue?
+  dispatches   Dispatch[]
 }
 
 model StageQueue {
@@ -338,6 +341,7 @@ model StageQueue {
   status         QueueStatus @default(QUEUED)
   enqueuedAt     DateTime    @default(now())
   dispatchedAt   DateTime?
+  dispatches     Dispatch[]
   sequenceNumber Int
   arrival        Arrival     @relation(fields: [arrivalId], references: [id])
   stage          Stage       @relation(fields: [stageId], references: [id])
@@ -359,21 +363,48 @@ model StageQueueCounter {
 }
 
 model Dispatch {
-  id               String          @id @default(cuid())
-  vehicleId        String
-  routeId          String
-  stageId          String
-  dispatchTime     DateTime        @default(now())
-  fare             Decimal         @db.Decimal(10, 2)
-  stageFee         Decimal         @db.Decimal(10, 2)
-  paymentConfirmed Boolean         @default(false)
-  expectedRevenue  Decimal         @db.Decimal(12, 2)
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  route            Route           @relation(fields: [routeId], references: [id])
-  stage            Stage           @relation(fields: [stageId], references: [id])
-  vehicle          Vehicle         @relation(fields: [vehicleId], references: [id])
-  platformCharge   PlatformCharge?
+  id String @id @default(cuid())
+
+  tenantId String
+
+  vehicleId String
+  arrivalId String @unique
+  queueId   String @unique
+
+  stageId String
+  routeId String
+
+  marshalId String
+
+  dispatchTime DateTime       @default(now())
+  status       DispatchStatus @default(DISPATCHED)
+
+  capacity Int
+
+  busFare         Decimal @db.Decimal(10, 2)
+  expectedRevenue Decimal @db.Decimal(12, 2)
+
+  saccoFee       Decimal?        @db.Decimal(10, 2)
+  platformCharge PlatformCharge?
+
+  remarks String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant     @relation(fields: [tenantId], references: [id])
+  vehicle Vehicle    @relation(fields: [vehicleId], references: [id])
+  arrival Arrival    @relation(fields: [arrivalId], references: [id])
+  queue   StageQueue @relation(fields: [queueId], references: [id])
+  stage   Stage      @relation(fields: [stageId], references: [id])
+  route   Route      @relation(fields: [routeId], references: [id])
+  marshal User       @relation(fields: [marshalId], references: [id])
+
+  @@index([tenantId])
+  @@index([stageId])
+  @@index([routeId])
+  @@index([vehicleId])
+  @@index([dispatchTime])
 }
 
 model PlatformCharge {
@@ -436,4 +467,10 @@ enum QueueStatus {
   LOADING
   DISPATCHED
   READY_TO_DISPATCH
+}
+
+enum DispatchStatus {
+  DISPATCHED
+  COMPLETED
+  CANCELLED
 }
