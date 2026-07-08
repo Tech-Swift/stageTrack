@@ -12,6 +12,7 @@ import stageRoutes from "./routes/stage.routes";
 import assignmentRoutes from "./routes/assignment.routes";
 import arrivalRoutes from "./routes/arrivalRoutes";
 import queueRoutes from "./routes/queue.routes";
+import dispatchRoutes from "./routes/dispatch.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
 
 const app = express();
@@ -45,6 +46,7 @@ app.use("/api/stages", stageRoutes);
 app.use("/api/assignment", assignmentRoutes);
 app.use("/api/arrivals", arrivalRoutes);
 app.use("/api/queue", queueRoutes);
+app.use("/api/dispatches", dispatchRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
 

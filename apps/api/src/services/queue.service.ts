@@ -233,10 +233,4 @@ export class QueueService {
       return updated;
     });
   }
-
-
-
-  /**
-   * Dispatch vehicle
-   */
 }
