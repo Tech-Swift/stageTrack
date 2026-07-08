@@ -32,7 +32,7 @@ router.post(
 
 router.get(
     "/:id",
-    authenticate,
+    authenticate,                                                           
     getStageById
 )
 

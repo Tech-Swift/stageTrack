@@ -53,7 +53,7 @@ export class QueueService {
       where: {
         stageId,
         status: {
-          in: ["LOADING", "QUEUED"],
+          in: ["LOADING", "QUEUED", "READY_TO_DISPATCH"],
         },
       },
       orderBy: {
@@ -233,6 +233,8 @@ export class QueueService {
       return updated;
     });
   }
+
+
 
   /**
    * Dispatch vehicle
