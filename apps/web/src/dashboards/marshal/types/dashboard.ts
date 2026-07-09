@@ -1,3 +1,14 @@
+export interface TenantBranding {
+  displayName?: string;
+  logoUrl?: string;
+  primaryColor: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  buttonRadius?: number;
+}
+
 export interface DashboardData {
   user: {
     id: string;
@@ -11,16 +22,7 @@ export interface DashboardData {
     name: string;
   } | null;
 
-  branding: {
-    displayName?: string;
-    logoUrl?: string;
-    primaryColor: string;
-    secondaryColor?: string;
-    accentColor?: string;
-    backgroundColor?: string;
-    textColor?: string;
-    buttonRadius?: number;
-  } | null;
+  branding: TenantBranding | null;
 
   activeAssignment: {
     id: string;
@@ -32,6 +34,7 @@ export interface DashboardData {
   } | null;
 
   status: "ON_DUTY" | "OFFLINE";
+
   canManageQueue: boolean;
 
   lastAssignment: {

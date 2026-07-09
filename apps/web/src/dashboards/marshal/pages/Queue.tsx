@@ -1,20 +1,31 @@
 import { useState } from "react";
 
 import AddArrivalModal from "../components/AddArrivalModal";
-import LoadingVehicleCard from "../components/LoadingVehicleCard";
-import QueueVehicleCard from "../components/QueueVehicleCard";
-import QueueStats from "../components/QueueStats";
+import { DispatchModal } from "../components/DispatchModal";
 import EmptyQueue from "../components/EmptyQueue";
+import LoadingVehicleCard from "../components/LoadingVehicleCard";
+import QueueStats from "../components/QueueStats";
+import QueueVehicleCard from "../components/QueueVehicleCard";
 
 import { useDashboard } from "../hooks/useDashboard";
-import { useQueue, useMarkReady } from "../hooks/useQueue";
+import { useMarkReady, useQueue } from "../hooks/useQueue";
+
+import type { QueueVehicle } from "../types/queue";
 
 export default function Queue() {
-  const [showArrivalModal, setShowArrivalModal] = useState(false);
+  const [showArrivalModal, setShowArrivalModal] =
+    useState(false);
+
+  const [showDispatchModal, setShowDispatchModal] =
+    useState(false);
+
+  const [selectedVehicle, setSelectedVehicle] =
+    useState<QueueVehicle | null>(null);
 
   const { data: dashboard } = useDashboard();
 
-  const canManageQueue = dashboard?.canManageQueue ?? false;
+  const canManageQueue =
+    dashboard?.canManageQueue ?? false;
 
   const stage =
     dashboard?.activeAssignment?.stage ??
@@ -22,47 +33,73 @@ export default function Queue() {
 
   const stageId = stage?.id;
 
-  const { data: queue = [], isLoading } = useQueue(stageId);
+  const {
+    data: queue = [],
+    isLoading,
+  } = useQueue(stageId);
 
   const markReadyMutation = useMarkReady();
 
   if (!dashboard) {
-    return <div className="p-6">Loading...</div>;
+    return (
+      <div className="p-6">
+        Loading...
+      </div>
+    );
   }
 
   const primaryColor =
-    dashboard.branding?.primaryColor ?? "#2563EB";
+    dashboard.branding?.primaryColor ??
+    "#2563EB";
 
   const waitingVehicles = queue.filter(
     (vehicle) => vehicle.status === "QUEUED"
   );
 
   const handleReady = async (
-      queueId: string
-    ) => {
-      if (!canManageQueue) {
-        return;
-      }
+    vehicle: QueueVehicle
+  ) => {
+    if (!canManageQueue) {
+      return;
+    }
 
-      try {
-        await markReadyMutation.mutateAsync(queueId);
-      } catch (error) {
-        console.error("Ready failed:", error);
-      }
-    };
+    try {
+      await markReadyMutation.mutateAsync(
+        vehicle.id
+      );
+
+      setSelectedVehicle(vehicle);
+
+      setShowDispatchModal(true);
+    } catch (error) {
+      console.error(
+        "Ready failed:",
+        error
+      );
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
       <QueueStats
-        waiting={dashboard.queueSummary?.waiting ?? 0}
-        loading={dashboard.queueSummary?.loading ?? 0}
-        dispatchedToday={dashboard.queueSummary?.dispatchedToday ?? 0}
+        waiting={
+          dashboard.queueSummary?.waiting ?? 0
+        }
+        loading={
+          dashboard.queueSummary?.loading ?? 0
+        }
+        dispatchedToday={
+          dashboard.queueSummary
+            ?.dispatchedToday ?? 0
+        }
       />
+
       {!canManageQueue && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
           <div className="flex items-start gap-3">
-            <div className="text-2xl">⚠️</div>
+            <div className="text-2xl">
+              ⚠️
+            </div>
 
             <div>
               <h3 className="font-semibold text-amber-900">
@@ -70,77 +107,122 @@ export default function Queue() {
               </h3>
 
               <p className="mt-1 text-sm text-amber-800">
-                You do not have an active duty assignment at the
-                moment. Queue operations are disabled until your
-                scheduled shift begins.
+                You do not have an active duty
+                assignment at the moment.
+                Queue operations are disabled
+                until your scheduled shift
+                begins.
               </p>
             </div>
           </div>
         </div>
       )}
-      {/* Loading Vehicle */}
+
       {dashboard.loadingVehicle && (
         <LoadingVehicleCard
           vehicle={dashboard.loadingVehicle}
           primaryColor={primaryColor}
           onReady={() =>
-            handleReady(dashboard.loadingVehicle.id)
+            handleReady(
+              dashboard.loadingVehicle
+            )
           }
         />
       )}
 
-      {/* Waiting Queue Section */}
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">Waiting Queue</h2>
+          <h2 className="text-lg font-bold">
+            Waiting Queue
+          </h2>
+
           <button
-          onClick={() => {
-            if (canManageQueue) {
-              setShowArrivalModal(true);
-            }
-          }}
-          disabled={!canManageQueue}
-          className={`rounded-xl px-4 py-2 font-semibold text-white transition ${
-            !canManageQueue
-              ? "cursor-not-allowed opacity-50"
-              : ""
-          }`}
-          style={{ backgroundColor: primaryColor }}
-        >
-          + Add Arrival
-        </button>
+            onClick={() => {
+              if (canManageQueue) {
+                setShowArrivalModal(true);
+              }
+            }}
+            disabled={!canManageQueue}
+            className={`rounded-xl px-4 py-2 font-semibold text-white transition ${
+              !canManageQueue
+                ? "cursor-not-allowed opacity-50"
+                : ""
+            }`}
+            style={{
+              backgroundColor:
+                primaryColor,
+            }}
+          >
+            + Add Arrival
+          </button>
         </div>
 
-        {/* TRUE EMPTY STATE LOGIC */}
         {isLoading ? (
           <div className="rounded-2xl border bg-white p-6 text-center">
             Loading queue...
           </div>
-        ) : waitingVehicles.length > 0 ? (
+        ) : waitingVehicles.length >
+          0 ? (
           <div className="space-y-3">
-            {waitingVehicles.map((vehicle) => (
-              <QueueVehicleCard
-                key={vehicle.id}
-                vehicle={vehicle}
-              />
-            ))}
+            {waitingVehicles.map(
+              (vehicle) => (
+                <QueueVehicleCard
+                  key={vehicle.id}
+                  vehicle={vehicle}
+                />
+              )
+            )}
           </div>
         ) : (
           <EmptyQueue />
         )}
       </div>
 
-      {/* Arrival Modal */}
       {showArrivalModal &&
         canManageQueue && (
           <AddArrivalModal
             stageId={stageId ?? ""}
-            primaryColor={primaryColor}
+            primaryColor={
+              primaryColor
+            }
             onClose={() =>
-              setShowArrivalModal(false)
+              setShowArrivalModal(
+                false
+              )
             }
           />
-      )}
+        )}
+
+      {showDispatchModal &&
+        selectedVehicle && (
+          <DispatchModal
+            open={showDispatchModal}
+            queueVehicle={
+              selectedVehicle
+            }
+            branding={
+              dashboard.branding
+            }
+            onClose={() => {
+              setShowDispatchModal(
+                false
+              );
+
+              setSelectedVehicle(
+                null
+              );
+            }}
+            onSuccess={() => {
+              setShowDispatchModal(
+                false
+              );
+
+              setSelectedVehicle(
+                null
+              );
+            }}
+          />
+        )}
     </div>
   );
 }
