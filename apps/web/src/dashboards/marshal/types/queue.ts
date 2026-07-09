@@ -30,17 +30,30 @@ export interface QueueVehicle {
   stageId: string;
   vehicleId: string;
   arrivalId: string;
+
   position: number | null;
-  sequenceNumber: number;
   status: QueueStatus;
-  enqueuedAt: string;
-  dispatchedAt: string | null;
+  sequenceNumber: number;
 
-  vehicle: Vehicle;
+  vehicle: {
+    id: string;
+    plateNumber: string;
+    capacity: number;
+  };
 
-  // Added
-  stage: Stage;
+  arrival: {
+    arrivalTime: string;
+  };
 
-  // Added
-  route?: Route;
+  stage: {
+    id: string;
+    name: string;
+  };
+
+  route: {
+    id: string;
+    name: string;
+    origin: string;
+    destination: string;
+  };
 }

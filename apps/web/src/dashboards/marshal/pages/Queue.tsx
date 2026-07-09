@@ -56,6 +56,10 @@ export default function Queue() {
     (vehicle) => vehicle.status === "QUEUED"
   );
 
+  const loadingVehicle = queue.find(
+  (vehicle) => vehicle.status === "LOADING"
+);
+
   const handleReady = async (
     vehicle: QueueVehicle
   ) => {
@@ -67,7 +71,6 @@ export default function Queue() {
       await markReadyMutation.mutateAsync(
         vehicle.id
       );
-
       setSelectedVehicle(vehicle);
 
       setShowDispatchModal(true);
@@ -117,19 +120,13 @@ export default function Queue() {
           </div>
         </div>
       )}
-
-      {dashboard.loadingVehicle && (
-        <LoadingVehicleCard
-          vehicle={dashboard.loadingVehicle}
-          primaryColor={primaryColor}
-          onReady={() =>
-            handleReady(
-              dashboard.loadingVehicle
-            )
-          }
-        />
-      )}
-
+      {loadingVehicle && (
+      <LoadingVehicleCard
+        vehicle={loadingVehicle}
+        primaryColor={primaryColor}
+        onReady={() => handleReady(loadingVehicle)}
+      />
+    )}
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">

@@ -48,27 +48,49 @@ export class QueueService {
   /**
    * Get stage queue
    */
-  static async getStageQueue(stageId: string) {
-    return prisma.stageQueue.findMany({
-      where: {
-        stageId,
-        status: {
-          in: ["LOADING", "QUEUED", "READY_TO_DISPATCH"],
+static async getStageQueue(stageId: string) {
+  const queue = await prisma.stageQueue.findMany({
+    where: {
+      stageId,
+      status: {
+        in: ["LOADING", "QUEUED", "READY_TO_DISPATCH"],
+      },
+    },
+    orderBy: {
+      position: "asc",
+    },
+    include: {
+      vehicle: true,
+
+      arrival: {
+        select: {
+          arrivalTime: true,
         },
       },
-      orderBy: {
-        position: "asc",
-      },
-      include: {
-        vehicle: true,
-        arrival: {
-          select: {
-            arrivalTime: true,
+
+      stage: {
+        select: {
+          id: true,
+          name: true,
+
+          route: {
+            select: {
+              id: true,
+              name: true,
+              origin: true,
+              destination: true,
+            },
           },
         },
       },
-    });
-  }
+    },
+  });
+
+  return queue.map((item) => ({
+    ...item,
+    route: item.stage.route,
+  }));
+}
 
   /**
    * Get current loading vehicle
@@ -82,6 +104,11 @@ export class QueueService {
       include: {
         vehicle: true,
         arrival: true,
+        stage : {
+          include: {
+            route: true,
+          },
+        },
       },
     });
   }
