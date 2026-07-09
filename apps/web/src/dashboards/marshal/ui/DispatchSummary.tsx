@@ -41,126 +41,123 @@ export function DispatchSummary({
   return (
     <div className="rounded-xl border bg-white shadow-sm">
 
-      <div className="border-b px-6 py-4">
-
+      {/* Header */}
+      <div className="border-b px-5 py-4">
         <h3 className="text-lg font-semibold">
           Dispatch Summary
         </h3>
 
         <p className="text-sm text-muted-foreground">
-          Review the vehicle and payment details before
-          confirming dispatch.
+          Verify the vehicle information before dispatching.
         </p>
-
       </div>
 
-      <div className="grid gap-4 p-6 md:grid-cols-2">
+      {/* Compact information cards */}
+      <div className="grid grid-cols-2 gap-3 p-5">
 
-        <div className="flex items-center gap-3 rounded-lg border p-4">
-          <Bus className="h-8 w-8 text-primary" />
-
-          <div>
-            <p className="text-xs text-muted-foreground">
+        <div className="rounded-lg border p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <Bus className="h-4 w-4 text-primary" />
+            <span className="text-xs text-muted-foreground">
               Vehicle
-            </p>
-
-            <p className="font-semibold">
-              {plateNumber}
-            </p>
+            </span>
           </div>
+
+          <p className="font-semibold">
+            {plateNumber}
+          </p>
         </div>
 
-        <div className="flex items-center gap-3 rounded-lg border p-4">
-          <Route className="h-8 w-8 text-primary" />
-
-          <div>
-            <p className="text-xs text-muted-foreground">
-              Route
-            </p>
-
-            <p className="font-semibold">
-              {routeName}
-            </p>
-
-            <p className="text-sm text-muted-foreground">
-              {stageName}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 rounded-lg border p-4">
-          <Users className="h-8 w-8 text-primary" />
-
-          <div>
-            <p className="text-xs text-muted-foreground">
+        <div className="rounded-lg border p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-xs text-muted-foreground">
               Capacity
-            </p>
-
-            <p className="font-semibold">
-              {capacity} Passengers
-            </p>
+            </span>
           </div>
+
+          <p className="font-semibold">
+            {capacity} Seats
+          </p>
         </div>
 
-        <div className="flex items-center gap-3 rounded-lg border p-4">
-          <Wallet className="h-8 w-8 text-primary" />
-
-          <div>
-            <p className="text-xs text-muted-foreground">
-              Expected Revenue
-            </p>
-
-            <p className="font-semibold">
-              {formatCurrency(expectedRevenue)}
-            </p>
+        <div className="rounded-lg border p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <Route className="h-4 w-4 text-primary" />
+            <span className="text-xs text-muted-foreground">
+              Route
+            </span>
           </div>
+
+          <p className="font-semibold truncate">
+            {routeName}
+          </p>
+
+          <p className="text-xs text-muted-foreground">
+            {stageName}
+          </p>
+        </div>
+
+        <div className="rounded-lg border p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-primary" />
+            <span className="text-xs text-muted-foreground">
+              Expected Revenue
+            </span>
+          </div>
+
+          <p className="font-semibold">
+            {formatCurrency(expectedRevenue)}
+          </p>
         </div>
 
       </div>
 
-      <div className="border-t bg-slate-50 p-6">
+      {/* Charges */}
+      <div className="border-t bg-slate-50 px-5 py-4">
 
-        <div className="space-y-3">
+        <div className="space-y-2 text-sm">
 
           <div className="flex items-center justify-between">
-
             <div className="flex items-center gap-2">
-
-              <Coins className="h-4 w-4" />
-
-              <span>StageTrack Platform Fee</span>
-
+              <Coins className="h-4 w-4 text-primary" />
+              <span>Platform Fee</span>
             </div>
 
             <span className="font-medium">
               {formatCurrency(platformFee)}
             </span>
-
           </div>
 
           <div className="flex items-center justify-between">
-
             <div className="flex items-center gap-2">
-
-              <Receipt className="h-4 w-4" />
-
+              <Receipt className="h-4 w-4 text-primary" />
               <span>SACCO Fee</span>
-
             </div>
 
             <span className="font-medium">
               {formatCurrency(saccoFee)}
             </span>
-
           </div>
 
-          <div className="mt-4 flex items-center justify-between rounded-lg border bg-white p-4">
+        </div>
 
-            <span className="text-base font-semibold">
-              Total Cash to Collect
-            </span>
+        {/* Total */}
+        <div className="mt-4 rounded-xl border bg-white p-4">
 
-            <span className="text-xl font-bold text-primary">
+          <div className="flex items-center justify-between">
+
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Cash to Collect
+              </p>
+
+              <p className="text-xs text-muted-foreground">
+                Amount expected from this dispatch
+              </p>
+            </div>
+
+            <span className="text-2xl font-bold text-primary">
               {formatCurrency(totalPayable)}
             </span>
 

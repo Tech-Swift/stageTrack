@@ -26,104 +26,86 @@ export function DispatchForm({
   disabled = false,
 }: DispatchFormProps) {
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-5">
 
-      {/* Bus Fare */}
+      {/* Fare Inputs */}
+      <div className="grid gap-4 md:grid-cols-2">
 
-      <div className="space-y-2">
-        <Label
-          htmlFor="busFare"
-          className="flex items-center gap-2"
-        >
-          <Banknote className="h-4 w-4 text-green-600" />
+        {/* Bus Fare */}
+        <div className="space-y-2">
+          <Label
+            htmlFor="busFare"
+            className="flex items-center gap-2 text-sm font-medium"
+          >
+            <Banknote className="h-4 w-4 text-muted-foreground" />
+            Bus Fare (KES)
+          </Label>
 
-          Bus Fare (KES)
-        </Label>
+          <Input
+            id="busFare"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            step="1"
+            placeholder="e.g. 80"
+            value={busFare}
+            disabled={disabled}
+            onChange={(e) =>
+              onBusFareChange(e.target.value)
+            }
+          />
+        </div>
 
-        <Input
-          id="busFare"
-          type="number"
-          min={0}
-          step="1"
-          placeholder="Enter bus fare"
+        {/* SACCO Fee */}
+        <div className="space-y-2">
+          <Label
+            htmlFor="saccoFee"
+            className="flex items-center gap-2 text-sm font-medium"
+          >
+            <Coins className="h-4 w-4 text-muted-foreground" />
+            SACCO Fee (KES)
+          </Label>
 
-          value={busFare}
+          <Input
+            id="saccoFee"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            step="1"
+            placeholder="e.g. 500"
+            value={saccoFee}
+            disabled={disabled}
+            onChange={(e) =>
+              onSaccoFeeChange(e.target.value)
+            }
+          />
+        </div>
 
-          disabled={disabled}
-
-          onChange={(e) =>
-            onBusFareChange(e.target.value)
-          }
-        />
-
-        <p className="text-xs text-muted-foreground">
-          Fare charged per passenger.
-        </p>
-      </div>
-
-      {/* SACCO Fee */}
-
-      <div className="space-y-2">
-        <Label
-          htmlFor="saccoFee"
-          className="flex items-center gap-2"
-        >
-          <Coins className="h-4 w-4 text-blue-600" />
-
-          SACCO Fee (KES)
-        </Label>
-
-        <Input
-          id="saccoFee"
-          type="number"
-          min={0}
-          step="1"
-          placeholder="Optional"
-
-          value={saccoFee}
-
-          disabled={disabled}
-
-          onChange={(e) =>
-            onSaccoFeeChange(e.target.value)
-          }
-        />
-
-        <p className="text-xs text-muted-foreground">
-          Amount payable to the SACCO for this trip.
-        </p>
       </div>
 
       {/* Remarks */}
-
       <div className="space-y-2">
         <Label
           htmlFor="remarks"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 text-sm font-medium"
         >
-          <FileText className="h-4 w-4 text-slate-600" />
-
+          <FileText className="h-4 w-4 text-muted-foreground" />
           Remarks
         </Label>
 
         <Textarea
           id="remarks"
-          rows={4}
-          placeholder="Optional dispatch notes"
-
+          rows={3}
+          className="resize-none"
+          placeholder="Add dispatch remarks (optional)"
           value={remarks}
-
           disabled={disabled}
-
           onChange={(e) =>
             onRemarksChange(e.target.value)
           }
         />
-
-        <p className="text-xs text-muted-foreground">
-          Record anything important about this dispatch.
-        </p>
       </div>
+
     </div>
   );
 }
