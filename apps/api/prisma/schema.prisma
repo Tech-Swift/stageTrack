@@ -347,8 +347,8 @@ model StageQueue {
   stage          Stage       @relation(fields: [stageId], references: [id])
   vehicle        Vehicle     @relation(fields: [vehicleId], references: [id])
 
-  @@unique([vehicleId, status])
   @@index([stageId, position])
+  @@index([vehicleId])
 }
 
 model StageQueueCounter {

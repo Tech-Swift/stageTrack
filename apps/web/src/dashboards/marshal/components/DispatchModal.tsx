@@ -61,7 +61,11 @@ export function DispatchModal({
         saccoFee: Number(saccoFee) || 0,
     });
     }, [queueVehicle, busFare, saccoFee]);
-
+    console.log("====== Dispatch Modal ======");
+console.log(queueVehicle);
+console.log("stage:", queueVehicle?.stage);
+console.log("route:", queueVehicle?.route);
+console.log("vehicle:", queueVehicle?.vehicle);
   if (!queueVehicle || !charges) {
     return null;
   }
