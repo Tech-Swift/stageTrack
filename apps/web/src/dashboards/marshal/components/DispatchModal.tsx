@@ -138,50 +138,26 @@ export function DispatchModal({
               items-start
             "
           >
-            {/* Summary */}
-
-            <div className="self-start rounded-2xl border bg-white shadow-sm">
-              <DispatchSummary
-                plateNumber={
-                  queueVehicle.vehicle.plateNumber
-                }
-                stageName={
-                  queueVehicle.stage.name
-                }
-                routeName={
-                  queueVehicle.route?.name ??
-                  ""
-                }
-                capacity={
-                  queueVehicle.vehicle.capacity
-                }
-                expectedRevenue={
-                  charges.expectedRevenue
-                }
-                platformFee={
-                  charges.platformFee
-                }
-                saccoFee={
-                  charges.saccoFee
-                }
-                totalPayable={
-                  charges.totalPayableToMarshal
-                }
-              />
-            </div>
-
             {/* Form */}
-
-            <div className="self-start rounded-2xl border bg-white shadow-sm">
+            <div
+              className="
+                order-1
+                lg:order-2
+                self-start
+                rounded-2xl
+                border
+                bg-white
+                shadow-sm
+              "
+            >
               <div className="border-b px-6 py-4">
                 <h3 className="text-lg font-semibold">
                   Dispatch Details
                 </h3>
 
                 <p className="text-sm text-muted-foreground">
-                  Enter the trip financial
-                  details before dispatching
-                  the vehicle.
+                  Enter the trip financial details before
+                  dispatching the vehicle.
                 </p>
               </div>
 
@@ -190,17 +166,35 @@ export function DispatchModal({
                   busFare={busFare}
                   saccoFee={saccoFee}
                   remarks={remarks}
-                  onBusFareChange={
-                    setBusFare
-                  }
-                  onSaccoFeeChange={
-                    setSaccoFee
-                  }
-                  onRemarksChange={
-                    setRemarks
-                  }
+                  onBusFareChange={setBusFare}
+                  onSaccoFeeChange={setSaccoFee}
+                  onRemarksChange={setRemarks}
                 />
               </div>
+            </div>
+
+            {/* Summary */}
+            <div
+              className="
+                order-2
+                lg:order-1
+                self-start
+                rounded-2xl
+                border
+                bg-white
+                shadow-sm
+              "
+            >
+              <DispatchSummary
+                plateNumber={queueVehicle.vehicle.plateNumber}
+                stageName={queueVehicle.stage.name}
+                routeName={queueVehicle.route?.name ?? ""}
+                capacity={queueVehicle.vehicle.capacity}
+                expectedRevenue={charges.expectedRevenue}
+                platformFee={charges.platformFee}
+                saccoFee={charges.saccoFee}
+                totalPayable={charges.totalPayableToMarshal}
+              />
             </div>
           </div>
         </div>
