@@ -8,20 +8,17 @@ export function useDispatch() {
   return useMutation({
     mutationFn: createDispatch,
 
-    onSuccess: () => {
-      /**
-       * Refresh queue
-       */
-      queryClient.invalidateQueries({
-        queryKey: ["queue"],
-      });
-
-      /**
-       * Refresh dashboard
-       */
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.refetchQueries({
+          queryKey: ["queue"],
+          type: "active",
+        }),
+        queryClient.refetchQueries({
+          queryKey: ["marshal-dashboard"],
+          type: "active",
+        }),
+      ]);
     },
   });
 }
