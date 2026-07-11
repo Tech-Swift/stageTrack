@@ -321,5 +321,80 @@ static async getStageQueue(stageId: string) {
       },
     });
   }
+  static async returnToQueue(
+  queueId: string,
+  userId: string
+) {
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        role: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error("User not found.");
+    }
+
+    const allowed =
+      user.role === "STAGE_MARSHAL" ||
+      user.role === "SUPER_ADMIN";
+
+    if (!allowed) {
+      throw new Error(
+        "You are not authorized to return vehicles to the queue."
+      );
+    }
+
+    const queueEntry =
+      await tx.stageQueue.findUnique({
+        where: {
+          id: queueId,
+        },
+      });
+
+    if (!queueEntry) {
+      throw new Error(
+        "Queue entry not found."
+      );
+    }
+
+    if (
+      queueEntry.status !== "READY_TO_DISPATCH"
+    ) {
+      throw new Error(
+        "Only ready vehicles can be returned to the queue."
+      );
+    }
+
+    // Shift every queued vehicle down by one
+    await tx.stageQueue.updateMany({
+      where: {
+        stageId: queueEntry.stageId,
+        status: "QUEUED",
+      },
+      data: {
+        position: {
+          increment: 1,
+        },
+      },
+    });
+
+    return tx.stageQueue.update({
+      where: {
+        id: queueId,
+      },
+      data: {
+        status: "QUEUED",
+        position: 1,
+        dispatchInterrupted: false,
+      },
+    });
+  });
+}
 }
 
