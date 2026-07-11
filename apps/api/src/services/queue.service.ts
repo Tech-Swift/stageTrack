@@ -243,6 +243,7 @@ static async getStageQueue(stageId: string) {
           },
           data: {
             status: "READY_TO_DISPATCH",
+            dispatchInterrupted: false,
             position: null,
           },
         });
@@ -260,4 +261,65 @@ static async getStageQueue(stageId: string) {
       return updated;
     });
   }
+
+    static async cancelDispatch(
+    queueId: string,
+    userId: string
+  ) {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        role: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error("User not found.");
+    }
+
+    const allowed =
+      user.role === "STAGE_MARSHAL" ||
+      user.role === "SUPER_ADMIN";
+
+    if (!allowed) {
+      throw new Error(
+        "You are not authorized to cancel a dispatch."
+      );
+    }
+
+    const queueEntry =
+      await prisma.stageQueue.findUnique({
+        where: {
+          id: queueId,
+        },
+      });
+
+    if (!queueEntry) {
+      throw new Error(
+        "Queue entry not found."
+      );
+    }
+
+    if (
+      queueEntry.status !==
+      "READY_TO_DISPATCH"
+    ) {
+      throw new Error(
+        "Only a ready vehicle can have its dispatch cancelled."
+      );
+    }
+
+    return prisma.stageQueue.update({
+      where: {
+        id: queueId,
+      },
+      data: {
+        dispatchInterrupted: true,
+      },
+    });
+  }
 }
+

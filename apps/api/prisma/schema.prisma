@@ -333,19 +333,20 @@ model Arrival {
 }
 
 model StageQueue {
-  id             String      @id @default(cuid())
-  stageId        String
-  vehicleId      String
-  arrivalId      String      @unique
-  position       Int?
-  status         QueueStatus @default(QUEUED)
-  enqueuedAt     DateTime    @default(now())
-  dispatchedAt   DateTime?
-  dispatches     Dispatch[]
-  sequenceNumber Int
-  arrival        Arrival     @relation(fields: [arrivalId], references: [id])
-  stage          Stage       @relation(fields: [stageId], references: [id])
-  vehicle        Vehicle     @relation(fields: [vehicleId], references: [id])
+  id                  String      @id @default(cuid())
+  stageId             String
+  vehicleId           String
+  arrivalId           String      @unique
+  position            Int?
+  status              QueueStatus @default(QUEUED)
+  dispatchInterrupted Boolean     @default(false)
+  enqueuedAt          DateTime    @default(now())
+  dispatchedAt        DateTime?
+  dispatches          Dispatch[]
+  sequenceNumber      Int
+  arrival             Arrival     @relation(fields: [arrivalId], references: [id])
+  stage               Stage       @relation(fields: [stageId], references: [id])
+  vehicle             Vehicle     @relation(fields: [vehicleId], references: [id])
 
   @@index([stageId, position])
   @@index([vehicleId])

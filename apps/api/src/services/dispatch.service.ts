@@ -194,6 +194,7 @@ export class DispatchService {
         data: {
             status: "DISPATCHED",
             dispatchedAt: new Date(),
+            dispatchInterrupted: false,
             position: null,
         },
         });
