@@ -411,5 +411,85 @@ static async getStageQueue(stageId: string) {
     });
   });
 }
+static async removeFromQueue(
+  queueId: string,
+  userId: string
+) {
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        role: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error("User not found.");
+    }
+
+    const allowed =
+      user.role === "STAGE_MARSHAL" ||
+      user.role === "SUPER_ADMIN";
+
+    if (!allowed) {
+      throw new Error(
+        "You are not authorized to remove vehicles from the queue."
+      );
+    }
+
+    const queueEntry =
+      await tx.stageQueue.findUnique({
+        where: {
+          id: queueId,
+        },
+      });
+
+    if (!queueEntry) {
+      throw new Error(
+        "Queue entry not found."
+      );
+    }
+
+    if (
+      queueEntry.status !== "QUEUED" &&
+      queueEntry.status !== "LOADING"
+    ) {
+      throw new Error(
+        "Only queued or loading vehicles can be removed."
+      );
+    }
+
+    const wasLoading =
+      queueEntry.status === "LOADING";
+
+    const removed =
+      await tx.stageQueue.update({
+        where: {
+          id: queueId,
+        },
+        data: {
+          status: "REMOVED",
+          position: null,
+        },
+      });
+
+    await this.recalculateQueuePositions(
+      tx,
+      queueEntry.stageId
+    );
+
+    if (wasLoading) {
+      await this.promoteNextVehicle(
+        tx,
+        queueEntry.stageId
+      );
+    }
+
+    return removed;
+  });
+}
 }
 

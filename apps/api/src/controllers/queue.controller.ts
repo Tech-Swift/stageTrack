@@ -157,3 +157,29 @@ export const returnToQueue = async (
     });
   }
 };
+
+export const removeFromQueue = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const queueId = req.params.queueId as string;
+    const userId = req.user!.userId;
+
+    const result =
+      await QueueService.removeFromQueue(
+        queueId,
+        userId
+      );
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(403).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

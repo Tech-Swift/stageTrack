@@ -3,7 +3,8 @@ import { authenticate } from "../middlewares/auth.middleware";
 import { 
     markReady,
     cancelDispatch,
-    returnToQueue
+    returnToQueue,
+    removeFromQueue
 } from "../controllers/queue.controller";
 
 const router = Router();
@@ -24,5 +25,11 @@ router.patch(
   "/:queueId/return",
   authenticate,
   returnToQueue
+);
+
+router.patch(
+  "/:queueId/remove",
+  authenticate,
+  removeFromQueue
 );
 export default router;
