@@ -6,12 +6,14 @@ interface Props {
   vehicle: QueueVehicle;
   primaryColor: string;
   onReady: () => void;
+  onRemove: () => void;
 }
 
 export default function LoadingVehicleCard({
   vehicle,
   primaryColor,
   onReady,
+  onRemove,
 }: Props) {
   return (
     <div className="rounded-2xl border bg-white p-6 shadow-sm">
@@ -25,21 +27,42 @@ export default function LoadingVehicleCard({
         </h2>
 
         <p className="text-slate-600">
-          {vehicle.vehicle.capacity}
-          {" "}Seater
+          {vehicle.vehicle.capacity} Seater
         </p>
       </div>
 
-      <button
-        onClick={onReady}
-        className="w-full rounded-xl py-3 text-white font-bold"
-        style={{
-          backgroundColor:
-            primaryColor,
-        }}
-      >
-        Ready For Dispatch
-      </button>
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={onRemove}
+          className="
+            rounded-xl
+            border
+            border-red-200
+            py-3
+            font-semibold
+            text-red-600
+            transition
+            hover:bg-red-50
+          "
+        >
+          Remove
+        </button>
+
+        <button
+          onClick={onReady}
+          className="
+            rounded-xl
+            py-3
+            font-bold
+            text-white
+          "
+          style={{
+            backgroundColor: primaryColor,
+          }}
+        >
+          Ready For Dispatch
+        </button>
+      </div>
     </div>
   );
 }

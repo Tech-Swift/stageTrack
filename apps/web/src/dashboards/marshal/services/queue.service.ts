@@ -55,11 +55,20 @@ export const returnToQueue = async (
   return response.data.data;
 };
 
-export const removeFromQueue = async (
-  queueId: string
-) => {
+interface RemoveVehiclePayload {
+  queueId: string;
+  reason: string;
+}
+
+export const removeFromQueue = async ({
+  queueId,
+  reason,
+}: RemoveVehiclePayload) => {
   const response = await api.patch(
-    `/queue/${queueId}/remove`
+    `/queue/${queueId}/remove`,
+    {
+      reason,
+    }
   );
 
   return response.data.data;

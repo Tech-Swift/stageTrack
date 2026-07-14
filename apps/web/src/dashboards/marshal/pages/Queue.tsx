@@ -8,6 +8,8 @@ import QueueStats from "../components/QueueStats";
 import QueueVehicleCard from "../components/QueueVehicleCard";
 import ReadyToDispatchCard from "../components/ReadyToDispatchCard";
 
+import RemoveVehicleDialog from "../ui/RemoveVehicleDialog";
+
 import { useDashboard } from "../hooks/useDashboard";
 import { useMarkReady, useQueue } from "../hooks/useQueue";
 import { useReturnToQueue } from "../hooks/useDispatch";
@@ -19,6 +21,9 @@ export default function Queue() {
     useState(false);
 
   const [showDispatchModal, setShowDispatchModal] =
+    useState(false);
+
+  const [showRemoveDialog, setShowRemoveDialog] =
     useState(false);
 
   const [selectedVehicle, setSelectedVehicle] =
@@ -41,7 +46,8 @@ export default function Queue() {
   } = useQueue(stageId);
 
   const markReadyMutation = useMarkReady();
-  const returnToQueueMutation = useReturnToQueue();
+  const returnToQueueMutation =
+    useReturnToQueue();
 
   if (!dashboard) {
     return (
@@ -60,13 +66,16 @@ export default function Queue() {
   );
 
   const loadingVehicle = queue.find(
-  (vehicle) => vehicle.status === "LOADING"
-);
+    (vehicle) =>
+      vehicle.status === "LOADING"
+  );
 
-const readyToDispatchVehicles = queue.filter(
-  (vehicle) =>
-    vehicle.status === "READY_TO_DISPATCH"
-);
+  const readyToDispatchVehicles =
+    queue.filter(
+      (vehicle) =>
+        vehicle.status ===
+        "READY_TO_DISPATCH"
+    );
 
   const handleReady = async (
     vehicle: QueueVehicle
@@ -79,8 +88,8 @@ const readyToDispatchVehicles = queue.filter(
       await markReadyMutation.mutateAsync(
         vehicle.id
       );
-      setSelectedVehicle(vehicle);
 
+      setSelectedVehicle(vehicle);
       setShowDispatchModal(true);
     } catch (error) {
       console.error(
@@ -91,28 +100,30 @@ const readyToDispatchVehicles = queue.filter(
   };
 
   const handleReturnToQueue = async (
-  vehicle: QueueVehicle
-) => {
-  try {
-    await returnToQueueMutation.mutateAsync(
-      vehicle.id
-    );
-  } catch (error) {
-    console.error(
-      "Failed to return vehicle to queue:",
-      error
-    );
-  }
-};
+    vehicle: QueueVehicle
+  ) => {
+    try {
+      await returnToQueueMutation.mutateAsync(
+        vehicle.id
+      );
+    } catch (error) {
+      console.error(
+        "Failed to return vehicle to queue:",
+        error
+      );
+    }
+  };
 
   return (
     <div className="space-y-6">
       <QueueStats
         waiting={
-          dashboard.queueSummary?.waiting ?? 0
+          dashboard.queueSummary?.waiting ??
+          0
         }
         loading={
-          dashboard.queueSummary?.loading ?? 0
+          dashboard.queueSummary?.loading ??
+          0
         }
         dispatchedToday={
           dashboard.queueSummary
@@ -143,35 +154,57 @@ const readyToDispatchVehicles = queue.filter(
           </div>
         </div>
       )}
-      {loadingVehicle && (
-      <LoadingVehicleCard
-        vehicle={loadingVehicle}
-        primaryColor={primaryColor}
-        onReady={() => handleReady(loadingVehicle)}
-      />
-    )}
-    {readyToDispatchVehicles.length > 0 && (
-  <div className="space-y-4">
-    <h2 className="text-lg font-bold">
-      Ready to Dispatch
-    </h2>
 
-    {readyToDispatchVehicles.map((vehicle) => (
-            <ReadyToDispatchCard
-              key={vehicle.id}
-              vehicle={vehicle}
-              primaryColor={primaryColor}
-              onDispatch={() => {
-                setSelectedVehicle(vehicle);
-                setShowDispatchModal(true);
-              }}
-              onReturnToQueue={() => {
-               handleReturnToQueue(vehicle)
-              }}
-            />
-          ))}
+      {loadingVehicle && (
+        <LoadingVehicleCard
+          vehicle={loadingVehicle}
+          primaryColor={primaryColor}
+          onReady={() =>
+            handleReady(loadingVehicle)
+          }
+          onRemove={() => {
+            setSelectedVehicle(
+              loadingVehicle
+            );
+            setShowRemoveDialog(true);
+          }}
+        />
+      )}
+
+      {readyToDispatchVehicles.length >
+        0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold">
+            Ready to Dispatch
+          </h2>
+
+          {readyToDispatchVehicles.map(
+            (vehicle) => (
+              <ReadyToDispatchCard
+                key={vehicle.id}
+                vehicle={vehicle}
+                primaryColor={
+                  primaryColor
+                }
+                onDispatch={() => {
+                  setSelectedVehicle(
+                    vehicle
+                  );
+                  setShowDispatchModal(
+                    true
+                  );
+                }}
+                onReturnToQueue={() =>
+                  handleReturnToQueue(
+                    vehicle
+                  )
+                }
+              />
+            )
+          )}
         </div>
       )}
+
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">
@@ -181,7 +214,9 @@ const readyToDispatchVehicles = queue.filter(
           <button
             onClick={() => {
               if (canManageQueue) {
-                setShowArrivalModal(true);
+                setShowArrivalModal(
+                  true
+                );
               }
             }}
             disabled={!canManageQueue}
@@ -211,6 +246,14 @@ const readyToDispatchVehicles = queue.filter(
                 <QueueVehicleCard
                   key={vehicle.id}
                   vehicle={vehicle}
+                  onRemove={() => {
+                    setSelectedVehicle(
+                      vehicle
+                    );
+                    setShowRemoveDialog(
+                      true
+                    );
+                  }}
                 />
               )
             )}
@@ -249,7 +292,6 @@ const readyToDispatchVehicles = queue.filter(
               setShowDispatchModal(
                 false
               );
-
               setSelectedVehicle(
                 null
               );
@@ -258,7 +300,22 @@ const readyToDispatchVehicles = queue.filter(
               setShowDispatchModal(
                 false
               );
+              setSelectedVehicle(
+                null
+              );
+            }}
+          />
+        )}
 
+      {showRemoveDialog &&
+        selectedVehicle && (
+          <RemoveVehicleDialog
+            open={showRemoveDialog}
+            vehicle={selectedVehicle}
+            onClose={() => {
+              setShowRemoveDialog(
+                false
+              );
               setSelectedVehicle(
                 null
               );
