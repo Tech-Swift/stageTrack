@@ -6,9 +6,11 @@ import EmptyQueue from "../components/EmptyQueue";
 import LoadingVehicleCard from "../components/LoadingVehicleCard";
 import QueueStats from "../components/QueueStats";
 import QueueVehicleCard from "../components/QueueVehicleCard";
+import ReadyToDispatchCard from "../components/ReadyToDispatchCard";
 
 import { useDashboard } from "../hooks/useDashboard";
 import { useMarkReady, useQueue } from "../hooks/useQueue";
+import { useReturnToQueue } from "../hooks/useDispatch";
 
 import type { QueueVehicle } from "../types/queue";
 
@@ -39,6 +41,7 @@ export default function Queue() {
   } = useQueue(stageId);
 
   const markReadyMutation = useMarkReady();
+  const returnToQueueMutation = useReturnToQueue();
 
   if (!dashboard) {
     return (
@@ -58,6 +61,11 @@ export default function Queue() {
 
   const loadingVehicle = queue.find(
   (vehicle) => vehicle.status === "LOADING"
+);
+
+const readyToDispatchVehicles = queue.filter(
+  (vehicle) =>
+    vehicle.status === "READY_TO_DISPATCH"
 );
 
   const handleReady = async (
@@ -81,6 +89,21 @@ export default function Queue() {
       );
     }
   };
+
+  const handleReturnToQueue = async (
+  vehicle: QueueVehicle
+) => {
+  try {
+    await returnToQueueMutation.mutateAsync(
+      vehicle.id
+    );
+  } catch (error) {
+    console.error(
+      "Failed to return vehicle to queue:",
+      error
+    );
+  }
+};
 
   return (
     <div className="space-y-6">
@@ -127,6 +150,28 @@ export default function Queue() {
         onReady={() => handleReady(loadingVehicle)}
       />
     )}
+    {readyToDispatchVehicles.length > 0 && (
+  <div className="space-y-4">
+    <h2 className="text-lg font-bold">
+      Ready to Dispatch
+    </h2>
+
+    {readyToDispatchVehicles.map((vehicle) => (
+            <ReadyToDispatchCard
+              key={vehicle.id}
+              vehicle={vehicle}
+              primaryColor={primaryColor}
+              onDispatch={() => {
+                setSelectedVehicle(vehicle);
+                setShowDispatchModal(true);
+              }}
+              onReturnToQueue={() => {
+               handleReturnToQueue(vehicle)
+              }}
+            />
+          ))}
+        </div>
+      )}
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">

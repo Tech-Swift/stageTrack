@@ -35,6 +35,8 @@ export function DispatchModal({
   onSuccess,
 }: DispatchModalProps) {
   const dispatchMutation = useDispatch();
+  const isSubmitting =
+  dispatchMutation.isPending;
 
   const [busFare, setBusFare] = useState("");
   const [saccoFee, setSaccoFee] = useState("");
@@ -202,9 +204,7 @@ export function DispatchModal({
         {/* Footer */}
 
         <DispatchActions
-          loading={
-            dispatchMutation.isPending
-          }
+          loading={isSubmitting}
           disabled={
             !busFare ||
             Number(busFare) <= 0

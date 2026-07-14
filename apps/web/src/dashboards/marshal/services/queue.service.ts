@@ -44,3 +44,13 @@ export const dispatchVehicle = async (
 
   return response.data;
 };
+
+export const returnToQueue = async (
+  queueId: string
+) => {
+  const response = await api.patch(
+    `/queue/${queueId}/return`
+  );
+
+  return response.data.data;
+};
