@@ -383,8 +383,7 @@ static async getStageQueue(stageId: string) {
         },
       },
     });
-
-    return tx.stageQueue.update({
+    await tx.stageQueue.update({
       where: {
         id: queueId,
       },
@@ -392,6 +391,22 @@ static async getStageQueue(stageId: string) {
         status: "QUEUED",
         position: 1,
         dispatchInterrupted: false,
+      },
+    });
+
+    await this.promoteNextVehicle(
+      tx,
+      queueEntry.stageId
+    );
+
+    await this.recalculateQueuePositions(
+      tx,
+      queueEntry.stageId
+    );
+
+    return tx.stageQueue.findUnique({
+      where: {
+        id: queueId,
       },
     });
   });
