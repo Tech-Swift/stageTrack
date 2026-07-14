@@ -165,11 +165,13 @@ export const removeFromQueue = async (
   try {
     const queueId = req.params.queueId as string;
     const userId = req.user!.userId;
+    const { reason } = req.body;
 
     const result =
       await QueueService.removeFromQueue(
         queueId,
-        userId
+        userId,
+        reason
       );
 
     return res.status(200).json({

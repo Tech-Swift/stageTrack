@@ -54,3 +54,13 @@ export const returnToQueue = async (
 
   return response.data.data;
 };
+
+export const removeFromQueue = async (
+  queueId: string
+) => {
+  const response = await api.patch(
+    `/queue/${queueId}/remove`
+  );
+
+  return response.data.data;
+};

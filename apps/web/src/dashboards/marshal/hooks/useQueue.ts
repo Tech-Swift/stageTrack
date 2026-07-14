@@ -11,6 +11,7 @@ import {
   getNextVehicle,
   markReady,
   dispatchVehicle,
+  removeFromQueue
 } from "../services/queue.service";
 
 /* =========================
@@ -98,3 +99,24 @@ export const useDispatch = () => {
     },
   });
 };
+
+export function useRemoveFromQueue() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: removeFromQueue,
+
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.refetchQueries({
+          queryKey: ["queue"],
+          type: "active",
+        }),
+        queryClient.refetchQueries({
+          queryKey: ["marshal-dashboard"],
+          type: "active",
+        }),
+      ]);
+    },
+  });
+}

@@ -413,7 +413,8 @@ static async getStageQueue(stageId: string) {
 }
 static async removeFromQueue(
   queueId: string,
-  userId: string
+  userId: string,
+  reason: string
 ) {
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({
@@ -429,6 +430,12 @@ static async removeFromQueue(
     if (!user) {
       throw new Error("User not found.");
     }
+
+    if (!reason?.trim()) {
+    throw new Error(
+      "A removal reason is required."
+    );
+  }
 
     const allowed =
       user.role === "STAGE_MARSHAL" ||
@@ -473,6 +480,9 @@ static async removeFromQueue(
         data: {
           status: "REMOVED",
           position: null,
+          removalReason: reason.trim(),
+          removedAt: new Date(),
+          removedById: userId,
         },
       });
 
