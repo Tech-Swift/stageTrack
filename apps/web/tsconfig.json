@@ -4,11 +4,15 @@
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
   ],
-    "compilerOptions": {
+  "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+
     "baseUrl": ".",
+
     "paths": {
       "@/*": ["./src/*"]
     },
+
     "strict": true,
     "forceConsistentCasingInFileNames": true
   }
