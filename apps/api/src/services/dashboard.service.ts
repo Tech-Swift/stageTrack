@@ -1,6 +1,13 @@
-import { prisma } from "../lib/prisma";
-import { getMarshalDutyStatus } from "./assignment.service"; // adjust path
+import { UserRole } from "@prisma/client";
 
+import { prisma } from "../lib/prisma";
+import { getMarshalDutyStatus } from "./assignment.service";
+
+/**
+ * ============================================================================
+ * STAGE MARSHAL DASHBOARD
+ * ============================================================================
+ */
 export const getMarshalDashboardData = async (
   userId: string
 ) => {
@@ -21,7 +28,7 @@ export const getMarshalDashboardData = async (
     throw new Error("User not found");
   }
 
-  if(!user.tenantId) {
+  if (!user.tenantId) {
     throw new Error("User is not assigned to a tenant");
   }
 
@@ -132,19 +139,76 @@ export const getMarshalDashboardData = async (
 
     branding: user.tenant?.branding,
 
-    activeAssignment: duty.assignment,
-
-    status: duty.status,
-
-    canManageQueue:
-      duty.canManageQueue,
-
-    lastAssignment,
-
-    queueSummary,
-
-    loadingVehicle,
-
     notificationsCount: 0,
+
+    roleData: {
+      activeAssignment: duty.assignment,
+      status: duty.status,
+      canManageQueue: duty.canManageQueue,
+      lastAssignment,
+      queueSummary,
+      loadingVehicle,
+    },
   };
+};
+
+/**
+ * ============================================================================
+ * DASHBOARD ORCHESTRATOR
+ * ============================================================================
+ */
+
+interface DashboardContext {
+  userId: string;
+  tenantId?: string;
+  role: UserRole;
+}
+
+export const getDashboardData = async ({
+  userId,
+  tenantId,
+  role,
+}: DashboardContext) => {
+  switch (role) {
+    case UserRole.STAGE_MARSHAL:
+      return getMarshalDashboardData(userId);
+
+    case UserRole.SACCO_ADMIN:
+      throw new Error(
+        "SACCO Admin dashboard is not implemented yet."
+      );
+
+    case UserRole.DIRECTOR:
+      throw new Error(
+        "Director dashboard is not implemented yet."
+      );
+
+    case UserRole.MANAGER:
+      throw new Error(
+        "Manager dashboard is not implemented yet."
+      );
+
+    case UserRole.DRIVER:
+      throw new Error(
+        "Driver dashboard is not implemented yet."
+      );
+
+    case UserRole.CONDUCTOR:
+      throw new Error(
+        "Conductor dashboard is not implemented yet."
+      );
+
+    case UserRole.VEHICLE_OWNER:
+      throw new Error(
+        "Vehicle Owner dashboard is not implemented yet."
+      );
+
+    case UserRole.SUPER_ADMIN:
+      throw new Error(
+        "Super Admin dashboard is not implemented yet."
+      );
+
+    default:
+      throw new Error("Unsupported user role.");
+  }
 };
