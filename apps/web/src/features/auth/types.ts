@@ -23,3 +23,13 @@ export interface LoginResponse {
   token: string;
   user: User;
 }
+
+export interface TenantBranding {
+  id: string;
+  tenantId: string;
+  displayName: string;
+  logoUrl: string | null;
+  primaryColor: string;
+  secondaryColor: string | null;
+  buttonRadius: number;
+}

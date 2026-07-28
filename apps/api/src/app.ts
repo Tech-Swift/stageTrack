@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import tenantRoutes from "./routes/tenant.routes";
+import appShellRoutes from "./routes/appShell.routes";
 import registrationRoutes from "./routes/registration.routes";
 import registrationReviewRoutes from "./routes/registration-review.routes";
 import authRoutes from "./routes/auth.routes";
@@ -38,6 +39,7 @@ app.use("/api/tenants", tenantRoutes);
 app.use("/api/registrations", registrationRoutes);
 app.use("/api/registration-reviews", registrationReviewRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/app-shell", appShellRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/crews", crewRoutes);
