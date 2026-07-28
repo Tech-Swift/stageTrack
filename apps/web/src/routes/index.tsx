@@ -4,8 +4,21 @@ import { LandingPage } from "@/pages/LandingPage";
 import RegistrationForm from "@/features/registration/RegistrationForm";
 import { marshalRoutes } from "@/dashboards/marshal/routes";
 
-// Import our new AppShell
-import { AppShell } from "@/dashboards/shared/layouts/AppShell";
+import AppShell from "@/dashboards/shared/layouts/AppShell";
+
+const PlaceholderPage = ({
+  title,
+}: {
+  title: string;
+}) => (
+  <div className="rounded-xl border bg-card p-8">
+    <h1 className="text-3xl font-bold">{title}</h1>
+
+    <p className="mt-2 text-muted-foreground">
+      AppShell loaded successfully.
+    </p>
+  </div>
+);
 
 export const router = createBrowserRouter([
   {
@@ -17,29 +30,55 @@ export const router = createBrowserRouter([
     element: <RegistrationForm />,
   },
 
-  // --- NEW TENANT WRAPPER ---
   {
-    path: "/:tenantCode", // Matches the "FT017" part of your URL
+    path: "/:tenantCode",
     element: <AppShell />,
     children: [
       {
-        path: "admin", // Matches the "/admin" part of your URL
+        path: "admin",
         element: (
-          <div className="p-8 text-center border-2 border-dashed border-brand-primary rounded-lg bg-card text-card-foreground">
-            <h2 className="text-2xl font-bold mb-2">App Shell is Live for SACCO Admin!</h2>
-            <p className="text-muted-foreground">
-              You were successfully redirected here. The Global colors and Sidebar should now be visible.
-            </p>
-          </div>
+          <PlaceholderPage title="SACCO Admin Dashboard" />
         ),
       },
       {
-        path: "manager", // Matches /FT017/manager
-        element: <div>Manager Content goes here</div>,
-      }
+        path: "director",
+        element: (
+          <PlaceholderPage title="Director Dashboard" />
+        ),
+      },
+      {
+        path: "manager",
+        element: (
+          <PlaceholderPage title="Manager Dashboard" />
+        ),
+      },
+      {
+        path: "driver",
+        element: (
+          <PlaceholderPage title="Driver Dashboard" />
+        ),
+      },
+      {
+        path: "conductor",
+        element: (
+          <PlaceholderPage title="Conductor Dashboard" />
+        ),
+      },
+      {
+        path: "owner",
+        element: (
+          <PlaceholderPage title="Vehicle Owner Dashboard" />
+        ),
+      },
+      {
+        path: "super-admin",
+        element: (
+          <PlaceholderPage title="Super Admin Dashboard" />
+        ),
+      },
     ],
   },
 
-  // --- LEGACY MARSHAL ROUTES (Untouched) ---
+  // Keep the existing marshal dashboard untouched
   ...marshalRoutes,
 ]);
