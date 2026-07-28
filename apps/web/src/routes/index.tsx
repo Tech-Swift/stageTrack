@@ -65,7 +65,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "owner",
+        path: "vehicle-owner",
         element: (
           <PlaceholderPage title="Vehicle Owner Dashboard" />
         ),
