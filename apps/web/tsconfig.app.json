@@ -11,11 +11,9 @@
     "types": ["vite/client"],
     "skipLibCheck": true,
 
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    },
-
+        "@/*": ["./src/*"]
+      },
     "jsx": "react-jsx",
     "noEmit": true,
 
