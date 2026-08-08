@@ -1,11 +1,11 @@
 import type { LucideIcon } from "lucide-react";
 
-import type { UserRole } from "./roles";
+import type { DashboardModule } from "@/dashboards/config/dashboardModules";
 
 export interface NavigationItem {
   label: string;
   path: string;
   icon: LucideIcon;
-  roles: UserRole[];
+  module: DashboardModule;
   children?: NavigationItem[];
 }

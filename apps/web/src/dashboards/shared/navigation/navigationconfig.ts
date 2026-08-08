@@ -1,5 +1,3 @@
-// src/dashboards/shared/navigation/navigationConfig.ts
-
 import {
   LayoutDashboard,
   Bus,
@@ -13,92 +11,62 @@ import {
 
 import type { NavigationItem } from "../types/navigation";
 
+import { DASHBOARD_MODULES } from "@/dashboards/config/dashboardModules";
+
 export const navigationConfig: NavigationItem[] = [
   {
     label: "Dashboard",
     path: "/dashboard",
     icon: LayoutDashboard,
-    roles: [
-      "SUPER_ADMIN",
-      "SACCO_ADMIN",
-      "DIRECTOR",
-      "MANAGER",
-      "STAGE_MARSHAL",
-      "VEHICLE_OWNER",
-      "DRIVER",
-      "CONDUCTOR",
-    ],
+    module: DASHBOARD_MODULES.OVERVIEW,
   },
 
   {
     label: "Queue",
     path: "/queue",
     icon: ClipboardList,
-    roles: ["STAGE_MARSHAL"],
+    module: DASHBOARD_MODULES.QUEUE,
   },
 
   {
     label: "Fleet",
     path: "/fleet",
     icon: Bus,
-    roles: [
-      "DIRECTOR",
-      "MANAGER",
-      "SACCO_ADMIN",
-    ],
+    module: DASHBOARD_MODULES.FLEET,
   },
 
   {
     label: "Routes",
     path: "/routes",
     icon: Route,
-    roles: [
-      "DIRECTOR",
-      "MANAGER",
-      "SACCO_ADMIN",
-    ],
+    module: DASHBOARD_MODULES.ROUTES,
   },
 
   {
     label: "Users",
     path: "/users",
     icon: Users,
-    roles: [
-      "SUPER_ADMIN",
-      "SACCO_ADMIN",
-    ],
+    module: DASHBOARD_MODULES.USERS,
   },
 
   {
     label: "Saccos",
     path: "/saccos",
     icon: Building2,
-    roles: ["SUPER_ADMIN"],
+    module: DASHBOARD_MODULES.SACCOS,
   },
 
   {
     label: "Assignments",
     path: "/assignments",
     icon: UserCog,
-    roles: [
-      "MANAGER",
-      "SACCO_ADMIN",
-    ],
+    module: DASHBOARD_MODULES.STAGE_ASSIGNMENTS,
   },
 
   {
     label: "Settings",
     path: "/settings",
     icon: Settings,
-    roles: [
-      "SUPER_ADMIN",
-      "SACCO_ADMIN",
-      "DIRECTOR",
-      "MANAGER",
-      "STAGE_MARSHAL",
-      "VEHICLE_OWNER",
-      "DRIVER",
-      "CONDUCTOR",
-    ],
+    module: DASHBOARD_MODULES.SETTINGS,
   },
 ];

@@ -1,0 +1,24 @@
+export const DASHBOARD_ACTIONS = {
+  VIEW: "VIEW",
+  CREATE: "CREATE",
+  UPDATE: "UPDATE",
+  DELETE: "DELETE",
+
+  REVIEW: "REVIEW",
+  APPROVE: "APPROVE",
+  REJECT: "REJECT",
+
+  ASSIGN: "ASSIGN",
+  UNASSIGN: "UNASSIGN",
+
+  ACTIVATE: "ACTIVATE",
+  SUSPEND: "SUSPEND",
+
+  DISPATCH: "DISPATCH",
+  REMOVE: "REMOVE",
+
+  MANAGE: "MANAGE",
+} as const;
+
+export type DashboardAction =
+  (typeof DASHBOARD_ACTIONS)[keyof typeof DASHBOARD_ACTIONS];
