@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bus, ArrowRight, Users } from 'lucide-react';
 
@@ -10,8 +9,13 @@ interface Vehicle {
   status: 'In Queue' | 'Loading' | 'Dispatched';
 }
 
-export const Hero: React.FC = () => {
-  const navigate = useNavigate();
+interface HeroProps {
+  onTenantApplication: () => void;
+}
+
+export const Hero: React.FC<HeroProps> = ({
+  onTenantApplication,
+}) => {
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([
     { id: '1', plate: 'KDF 456A', route: '102 - Kikuyu', status: 'Loading' },
@@ -77,10 +81,10 @@ export const Hero: React.FC = () => {
 
           <div className="flex flex-col items-center justify-center gap-4 pt-2 sm:flex-row lg:justify-start">
             <button
-              onClick={() => navigate('/register')}
+              onClick={onTenantApplication}
               className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-8 py-4 font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-700 sm:w-auto"
             >
-              Request Demo / Register
+              Apply as a SACCO
               <ArrowRight
                 size={18}
                 className="transition-transform group-hover:translate-x-1"

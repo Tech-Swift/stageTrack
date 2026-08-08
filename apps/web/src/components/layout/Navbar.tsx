@@ -15,7 +15,12 @@ interface NavLink {
   targetId: string;
 }
 
-export const Navbar: React.FC = () => {
+interface NavbarProps {
+  onTenantApplication: () => void;
+}
+export const Navbar: React.FC<NavbarProps> = ({
+  onTenantApplication,
+}) => {
   const [isOpen, setIsOpen] =
     useState<boolean>(false);
 
@@ -232,14 +237,12 @@ export const Navbar: React.FC = () => {
                 Login
               </button>
 
-              <button
-                onClick={() =>
-                  navigate("/register")
-                }
-                className="bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-all shadow-md shadow-blue-600/10 active:scale-95 cursor-pointer"
-              >
-                Book a Demo
-              </button>
+            <button
+              onClick={onTenantApplication}
+              className="bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-all shadow-md shadow-blue-600/10 active:scale-95 cursor-pointer"
+            >
+              Apply as a SACCO
+            </button>
             </div>
 
             {/* Mobile Actions */}
@@ -329,15 +332,11 @@ export const Navbar: React.FC = () => {
               >
                 Login
               </button>
-
               <button
-                onClick={() => {
-                  setIsOpen(false);
-                  navigate("/register");
-                }}
+                onClick={onTenantApplication}
                 className="w-full text-center bg-[#2563EB] hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors"
               >
-                Book a Demo
+                Apply as a SACCO
               </button>
             </div>
           </div>

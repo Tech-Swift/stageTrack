@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 
 import { LandingPage } from "@/pages/LandingPage";
 import RegistrationForm from "@/features/registration/RegistrationForm";
+import TenantApplicationForm from "@/features/tenantApplication/TenantApplicationForm";
 import { marshalRoutes } from "@/dashboards/marshal/routes";
 
 import AppShell from "@/dashboards/shared/layouts/AppShell";
@@ -30,6 +31,10 @@ export const router = createBrowserRouter([
     element: <RegistrationForm />,
   },
 
+  {
+    path: "/tenant-application",
+    element: <TenantApplicationForm />,
+  },
   {
     path: "/:tenantCode",
     element: <AppShell />,
