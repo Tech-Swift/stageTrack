@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import tenantApplicationRoutes from "./routes/tenantApplication.routes";
 import tenantRoutes from "./routes/tenant.routes";
 import appShellRoutes from "./routes/appShell.routes";
 import registrationRoutes from "./routes/registration.routes";
@@ -18,13 +19,17 @@ import dashboardRoutes from "./routes/dashboard.routes";
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://stagetrack.co.ke",
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: allowedOrigins,
     credentials: true,
   })
 );
-
 app.use(express.json());
 
 
@@ -34,7 +39,7 @@ app.get("/api/health", (_, res) => {
     service: "StageTrack API",
   });
 });
-
+app.use("/api/tenant-applications", tenantApplicationRoutes);
 app.use("/api/tenants", tenantRoutes);
 app.use("/api/registrations", registrationRoutes);
 app.use("/api/registration-reviews", registrationReviewRoutes);

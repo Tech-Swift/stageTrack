@@ -6,6 +6,40 @@ datasource db {
   provider = "postgresql"
 }
 
+model TenantApplication {
+  id String @id @default(cuid())
+
+  referenceNumber String @unique
+
+  saccoName          String
+  registrationNumber String?
+  preferredCode      String?
+
+  county          String
+  town            String?
+  physicalAddress String?
+
+  contactName     String
+  contactEmail    String
+  contactPhone    String
+  contactPosition String?
+
+  status TenantApplicationStatus @default(PENDING)
+
+  reviewedById String?
+  reviewedBy   User?   @relation(fields: [reviewedById], references: [id])
+
+  reviewedAt      DateTime?
+  reviewNotes     String?
+  rejectionReason String?
+
+  approvedTenantId String? @unique
+  approvedTenant   Tenant? @relation(fields: [approvedTenantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Tenant {
   id                   String                @id @default(cuid())
   name                 String
@@ -29,6 +63,7 @@ model Tenant {
   vehicleCrews         VehicleCrew[]
   vehicleOwners        VehicleOwner[]
   dispatches           Dispatch[]
+  tenantApplication    TenantApplication?
 }
 
 model TenantBranding {
@@ -88,30 +123,31 @@ model PasswordSetupToken {
 }
 
 model User {
-  id                   String                @id @default(cuid())
-  tenantId             String?
-  name                 String
-  email                String                @unique
-  password             String?
-  role                 UserRole
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  accountStatus        AccountStatus         @default(PENDING_SETUP)
-  failedLoginAttempts  Int                   @default(0)
-  lastLoginAt          DateTime?
-  lockedUntil          DateTime?
-  conductor            Conductor?
-  driver               Driver?
-  resetTokens          PasswordResetToken[]
-  setupTokens          PasswordSetupToken?
-  approvedRequests     RegistrationRequest[] @relation("RegistrationApprovedBy")
-  rejectedRequests     RegistrationRequest[] @relation("RegistrationRejectedBy")
-  registrationRequests RegistrationRequest?
-  StageAssignment      StageAssignment[]
-  dispatches           Dispatch[]
-  stageMarshal         StageMarshal?
-  tenant               Tenant?               @relation(fields: [tenantId], references: [id])
-  removedQueueEntries  StageQueue[]          @relation("QueueRemoval")
+  id                         String                @id @default(cuid())
+  tenantId                   String?
+  name                       String
+  email                      String                @unique
+  password                   String?
+  role                       UserRole
+  createdAt                  DateTime              @default(now())
+  updatedAt                  DateTime              @updatedAt
+  accountStatus              AccountStatus         @default(PENDING_SETUP)
+  failedLoginAttempts        Int                   @default(0)
+  lastLoginAt                DateTime?
+  lockedUntil                DateTime?
+  conductor                  Conductor?
+  driver                     Driver?
+  reviewedTenantApplications TenantApplication[]
+  resetTokens                PasswordResetToken[]
+  setupTokens                PasswordSetupToken?
+  approvedRequests           RegistrationRequest[] @relation("RegistrationApprovedBy")
+  rejectedRequests           RegistrationRequest[] @relation("RegistrationRejectedBy")
+  registrationRequests       RegistrationRequest?
+  StageAssignment            StageAssignment[]
+  dispatches                 Dispatch[]
+  stageMarshal               StageMarshal?
+  tenant                     Tenant?               @relation(fields: [tenantId], references: [id])
+  removedQueueEntries        StageQueue[]          @relation("QueueRemoval")
 
   profile      UserProfile?
   vehicleOwner VehicleOwner?
@@ -451,6 +487,14 @@ enum UserRole {
   DRIVER
   CONDUCTOR
   VEHICLE_OWNER
+}
+
+enum TenantApplicationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
 }
 
 enum RegistrationStatus {
