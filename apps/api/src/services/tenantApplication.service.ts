@@ -152,29 +152,198 @@ export const submitTenantApplication = async (
     return application;
   });
 };
-
 export const getTenantApplications = async () => {
-
+  return prisma.tenantApplication.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 };
 
 export const getTenantApplicationById = async (
   id: string
 ) => {
+  const application =
+    await prisma.tenantApplication.findUnique({
+      where: {
+        id,
+      },
+    });
 
+  if (!application) {
+    throw new Error(
+      "Tenant application not found."
+    );
+  }
+
+  return application;
 };
 
 export const startTenantApplicationReview = async (
   applicationId: string,
   reviewerId: string
 ) => {
+  return prisma.$transaction(async (tx) => {
+    const application =
+      await tx.tenantApplication.findUnique({
+        where: {
+          id: applicationId,
+        },
+      });
 
+    if (!application) {
+      throw new Error(
+        "Tenant application not found."
+      );
+    }
+
+    const reviewer = await tx.user.findUnique({
+      where: {
+        id: reviewerId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!reviewer) {
+      throw new Error(
+        "Reviewer not found."
+      );
+    }
+
+    const updatedApplication =
+      await tx.tenantApplication.updateMany({
+        where: {
+          id: applicationId,
+          status: "PENDING",
+        },
+        data: {
+          status: "UNDER_REVIEW",
+          reviewedById: reviewerId,
+          reviewedAt: new Date(),
+        },
+      });
+
+    if (updatedApplication.count === 0) {
+      throw new Error(
+        `Tenant application cannot be reviewed because its current status is ${application.status}.`
+      );
+    }
+
+    return tx.tenantApplication.findUnique({
+      where: {
+        id: applicationId,
+      },
+    });
+  });
 };
 
 export const approveTenantApplication = async (
   applicationId: string,
-  reviewerId: string
+  reviewerId: string,
+  reviewNotes?: string
 ) => {
+  return prisma.$transaction(async (tx) => {
+    // 1. Find the application
+    const application =
+      await tx.tenantApplication.findUnique({
+        where: {
+          id: applicationId,
+        },
+      });
 
+    if (!application) {
+      throw new Error(
+        "Tenant application not found."
+      );
+    }
+
+    // 2. Application must currently be under review
+    if (application.status !== "UNDER_REVIEW") {
+      throw new Error(
+        `Tenant application cannot be approved because its current status is ${application.status}.`
+      );
+    }
+
+    // 3. Verify the reviewer exists
+    const reviewer = await tx.user.findUnique({
+      where: {
+        id: reviewerId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!reviewer) {
+      throw new Error(
+        "Reviewer not found."
+      );
+    }
+
+    // 4. A tenant must have a code
+    const tenantCode =
+      application.preferredCode
+        ?.trim()
+        .toUpperCase();
+
+    if (!tenantCode) {
+      throw new Error(
+        "A tenant code is required before this application can be approved."
+      );
+    }
+
+    // 5. Make sure the tenant code is not already in use
+    const existingTenant =
+      await tx.tenant.findUnique({
+        where: {
+          code: tenantCode,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+    if (existingTenant) {
+      throw new Error(
+        "The tenant code is already in use."
+      );
+    }
+
+    // 6. Create the tenant
+    const tenant = await tx.tenant.create({
+      data: {
+        name: application.saccoName,
+        code: tenantCode,
+        email: application.contactEmail,
+        phone: application.contactPhone,
+        isActive: true,
+      },
+    });
+
+    // 7. Mark the application as approved
+    const approvedApplication =
+      await tx.tenantApplication.update({
+        where: {
+          id: applicationId,
+        },
+        data: {
+          status: "APPROVED",
+          approvedTenantId: tenant.id,
+          reviewedById: reviewerId,
+          reviewedAt: new Date(),
+          reviewNotes:
+            reviewNotes?.trim() || null,
+        },
+      });
+
+    // 8. Return both sides of the approval
+    return {
+      application: approvedApplication,
+      tenant,
+    };
+  });
 };
 
 export const rejectTenantApplication = async (
@@ -183,5 +352,81 @@ export const rejectTenantApplication = async (
   rejectionReason: string,
   reviewNotes?: string
 ) => {
+  return prisma.$transaction(async (tx) => {
+    // 1. Find the application
+    const application =
+      await tx.tenantApplication.findUnique({
+        where: {
+          id: applicationId,
+        },
+      });
 
+    if (!application) {
+      throw new Error(
+        "Tenant application not found."
+      );
+    }
+
+    // 2. Application must currently be under review
+    if (application.status !== "UNDER_REVIEW") {
+      throw new Error(
+        `Tenant application cannot be rejected because its current status is ${application.status}.`
+      );
+    }
+
+    // 3. Verify the reviewer exists
+    const reviewer = await tx.user.findUnique({
+      where: {
+        id: reviewerId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!reviewer) {
+      throw new Error(
+        "Reviewer not found."
+      );
+    }
+
+    // 4. Normalize rejection information
+    const normalizedRejectionReason =
+      rejectionReason.trim();
+
+    const normalizedReviewNotes =
+      reviewNotes?.trim() || null;
+
+    // 5. Reject the application
+    const rejectedApplication =
+      await tx.tenantApplication.updateMany({
+        where: {
+          id: applicationId,
+          status: "UNDER_REVIEW",
+        },
+        data: {
+          status: "REJECTED",
+          reviewedById: reviewerId,
+          reviewedAt: new Date(),
+          rejectionReason:
+            normalizedRejectionReason,
+          reviewNotes:
+            normalizedReviewNotes,
+        },
+      });
+
+    // 6. Protect against concurrent state changes
+    if (rejectedApplication.count === 0) {
+      throw new Error(
+        `Tenant application cannot be rejected because its current status is ${application.status}.`
+      );
+    }
+
+    // 7. Return the updated application
+    return tx.tenantApplication.findUnique({
+      where: {
+        id: applicationId,
+      },
+    });
+  });
 };
